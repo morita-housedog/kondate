@@ -1,6 +1,6 @@
 /* わたしの献立帖 Service Worker
    アプリを更新したら VERSION の数字を1つ上げてください（例：v1 → v2）。 */
-const VERSION = 'kondate-v2';
+const VERSION = 'kondate-v3';
 const SHELL = [
   './', './index.html', './app.js', './styles.css', './manifest.webmanifest',
   './vendor/react.production.min.js', './vendor/react-dom.production.min.js', './vendor/qrcode.js',

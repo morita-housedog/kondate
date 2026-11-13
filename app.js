@@ -551,6 +551,20 @@ const LUCIDE = {
     "d": "M7 12h10"
   }], ["path", {
     "d": "M7 16h6"
+  }]],
+  "MessageCircle": [["path", {
+    "d": "M7.9 20A9 9 0 1 0 4 16.1L2 22Z"
+  }]],
+  "FileImage": [["path", {
+    "d": "M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"
+  }], ["path", {
+    "d": "M14 2v4a2 2 0 0 0 2 2h4"
+  }], ["circle", {
+    "cx": "10",
+    "cy": "12",
+    "r": "2"
+  }], ["path", {
+    "d": "m20 17-1.296-1.296a2.41 2.41 0 0 0-3.408 0L9 22"
   }]]
 };
 function Icon({
@@ -2017,7 +2031,8 @@ function RecipeDetail({
   onEdit,
   onDelete,
   onSaveGeneric,
-  onFav
+  onFav,
+  onSend
 }) {
   if (!recipe) return null;
   const r = recipe;
@@ -2033,13 +2048,20 @@ function RecipeDetail({
     }), "\u30DE\u30A4\u30EC\u30B7\u30D4\u306B\u4FDD\u5B58") : React.createElement("div", {
       className: "flex gap-2"
     }, React.createElement("button", {
-      className: btnGhost + ' flex-1',
-      onClick: () => onDelete(r)
+      className: btnGhost + ' px-3',
+      onClick: () => onDelete(r),
+      "aria-label": "\u524A\u9664"
     }, React.createElement(Icon, {
       name: "Trash2",
+      size: 18
+    })), React.createElement("button", {
+      className: btnGhost + ' flex-1',
+      onClick: () => onSend(r)
+    }, React.createElement(Icon, {
+      name: "Send",
       size: 16
-    }), "\u524A\u9664"), React.createElement("button", {
-      className: btnPrimary + ' flex-[2]',
+    }), "\u9001\u308B"), React.createElement("button", {
+      className: btnPrimary + ' flex-[1.4]',
       onClick: () => onEdit(r)
     }, React.createElement(Icon, {
       name: "Pencil",
@@ -2224,10 +2246,30 @@ function RecipeForm({
       setOcr(null);
     }
   }
-  function autofill() {
+  async function autofill() {
     if (!caption.trim()) {
       toast('投稿文を貼り付けてから押してください。');
       return;
+    }
+    const rc = recipeCodeIn(caption);
+    if (rc) {
+      const r = await unpackRecipe(rc);
+      if (r) {
+        r.categories.forEach(c => onAddCategory(c));
+        setF(prev => ({
+          ...prev,
+          name: r.name,
+          instaUrl: r.instaUrl,
+          ingredients: r.ingredients.length ? r.ingredients : prev.ingredients,
+          steps: r.steps.length ? r.steps : prev.steps,
+          kcal: r.kcal ? String(r.kcal) : '',
+          kcalEstimated: false,
+          categories: [...new Set([...prev.categories, ...r.categories])]
+        }));
+        setCaption('');
+        toast('送られてきたレシピを入力しました。写真を足して保存してください');
+        return;
+      }
     }
     const p = parseCaption(caption, categories);
     setF(prev => ({
@@ -2406,7 +2448,7 @@ function RecipeForm({
     value: caption,
     onChange: e => setCaption(e.target.value),
     className: field + ' text-sm',
-    placeholder: '投稿のキャプションをまるごと貼り付け\n例）【材料】鶏むね肉 1枚 / 塩 少々…【作り方】①…'
+    placeholder: '投稿のキャプションをまるごと貼り付け\n（送られてきたレシピのリンクもここに貼れます）\n例）【材料】鶏むね肉 1枚 / 塩 少々…【作り方】①…'
   }), React.createElement("button", {
     type: "button",
     onClick: autofill,
@@ -3288,6 +3330,222 @@ function Shopping({
     })))))));
   }));
 }
+const sendable = r => ({
+  name: r.name,
+  kcal: r.kcal || null,
+  categories: r.categories || [],
+  instaUrl: r.instaUrl || '',
+  ingredients: (r.ingredients || []).map(i => ({
+    name: i.name,
+    amount: i.amount || ''
+  })),
+  steps: r.steps || []
+});
+async function packRecipe(r) {
+  const json = JSON.stringify({
+    v: 1,
+    r: sendable(r)
+  });
+  try {
+    if (window.CompressionStream) {
+      const s = new Blob([json]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+      const buf = new Uint8Array(await new Response(s).arrayBuffer());
+      let bin = '';
+      buf.forEach(b => bin += String.fromCharCode(b));
+      return 'z' + btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+  } catch (e) {}
+  return 'j' + b64e(json);
+}
+async function unpackRecipe(code) {
+  try {
+    const kind = code[0],
+      body = code.slice(1);
+    let json;
+    if (kind === 'z') {
+      const bin = atob(body.replace(/-/g, '+').replace(/_/g, '/'));
+      const buf = Uint8Array.from(bin, c => c.charCodeAt(0));
+      const s = new Blob([buf]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+      json = await new Response(s).text();
+    } else json = b64d(body);
+    const d = JSON.parse(json);
+    if (d && d.r && d.r.name) return sendable(d.r);
+  } catch (e) {
+    console.error(e);
+  }
+  return null;
+}
+const recipeCodeIn = t => {
+  const m = String(t || '').match(/#recipe=([A-Za-z0-9_-]+)/);
+  return m ? m[1] : null;
+};
+async function recipeLink(r) {
+  return location.origin + location.pathname + '#recipe=' + (await packRecipe(r));
+}
+function recipeText(r) {
+  const L = [`【レシピ】${r.name}`];
+  if (r.kcal) L.push(`約${r.kcal}kcal（1人分）`);
+  if ((r.ingredients || []).length) {
+    L.push('', '■材料');
+    r.ingredients.forEach(i => L.push(`・${i.name}${i.amount ? '　' + i.amount : ''}`));
+  }
+  if ((r.steps || []).length) {
+    L.push('', '■作り方');
+    r.steps.forEach((s, k) => L.push(`${k + 1}. ${s}`));
+  }
+  if (r.instaUrl) L.push('', 'Instagram：' + r.instaUrl);
+  return L.join('\n');
+}
+function SendSheet({
+  recipe,
+  onClose,
+  toast
+}) {
+  const [busy, setBusy] = useState(false);
+  if (!recipe) return null;
+  const r = recipe;
+  async function sendMessage() {
+    setBusy(true);
+    try {
+      const link = await recipeLink(r);
+      await shareOrCopy(`${recipeText(r)}\n\n――――\n献立帖アプリに追加するときはこちら：\n${link}`, r.name, toast);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function sendFile() {
+    const json = JSON.stringify({
+      app: 'kondate-cho',
+      version: 2,
+      kind: 'recipe',
+      exportedAt: new Date().toISOString(),
+      recipes: [{
+        ...r,
+        id: uid(),
+        fav: false,
+        sample: false,
+        createdAt: Date.now()
+      }],
+      categories: r.categories || []
+    });
+    const fn = `recipe-${r.name.replace(/[\\/:*?"<>|\s]+/g, '_').slice(0, 30)}.json`;
+    try {
+      const file = new File([json], fn, {
+        type: 'application/json'
+      });
+      if (navigator.canShare && navigator.canShare({
+        files: [file]
+      })) {
+        await navigator.share({
+          files: [file],
+          title: r.name
+        });
+        return;
+      }
+    } catch (e) {
+      if (e && e.name === 'AbortError') return;
+    }
+    try {
+      downloadText(fn, json);
+      toast('ファイルを保存しました。LINEなどで送ってください');
+    } catch (e) {
+      toast('ファイルを作れませんでした');
+    }
+  }
+  return React.createElement(Sheet, {
+    open: true,
+    title: "\u3053\u306E\u30EC\u30B7\u30D4\u3092\u9001\u308B",
+    onClose: onClose
+  }, React.createElement("div", {
+    className: "flex flex-col gap-3"
+  }, React.createElement("div", {
+    className: "flex items-center gap-3 rounded-2xl bg-sunk p-3"
+  }, React.createElement(Photo, {
+    r: r,
+    className: "w-14 h-14 rounded-xl shrink-0"
+  }), React.createElement("div", {
+    className: "min-w-0"
+  }, React.createElement("p", {
+    className: "font-bold truncate"
+  }, r.name), React.createElement("p", {
+    className: "text-xs text-muted tnum"
+  }, "\u6750\u6599", (r.ingredients || []).length, "\u54C1\u30FB\u624B\u9806", (r.steps || []).length, "\u3064", r.kcal ? `・${r.kcal}kcal` : ''))), React.createElement("button", {
+    disabled: busy,
+    onClick: sendMessage,
+    className: btnPrimary + ' justify-start text-left'
+  }, React.createElement(Icon, {
+    name: "MessageCircle",
+    size: 20
+  }), React.createElement("span", {
+    className: "flex flex-col"
+  }, React.createElement("span", null, "LINE\u306A\u3069\u3067\u9001\u308B"), React.createElement("span", {
+    className: "text-xs font-normal opacity-80"
+  }, "\u30EC\u30B7\u30D4\u306E\u6587\u7AE0\u3068\u3001\u732E\u7ACB\u5E16\u306B\u8FFD\u52A0\u3067\u304D\u308B\u30EA\u30F3\u30AF\u3092\u9001\u308A\u307E\u3059"))), React.createElement("button", {
+    onClick: sendFile,
+    className: btnGhost + ' justify-start text-left py-3'
+  }, React.createElement(Icon, {
+    name: "FileImage",
+    size: 20
+  }), React.createElement("span", {
+    className: "flex flex-col"
+  }, React.createElement("span", {
+    className: "font-bold"
+  }, "\u5199\u771F\u4ED8\u304D\u3067\u9001\u308B\uFF08\u30D5\u30A1\u30A4\u30EB\uFF09"), React.createElement("span", {
+    className: "text-xs text-muted"
+  }, "\u53D7\u3051\u53D6\u3063\u305F\u4EBA\u306F\u3001\u8A2D\u5B9A\u306E\u300CJSON\u30D5\u30A1\u30A4\u30EB\u3092\u8AAD\u307F\u8FBC\u3080\u300D\u3067\u8FFD\u52A0\u3057\u307E\u3059"))), React.createElement("p", {
+    className: "text-xs text-muted"
+  }, "\u30EA\u30F3\u30AF\u306B\u306F\u5199\u771F\u306F\u5165\u308A\u307E\u305B\u3093\u3002\u5199\u771F\u3082\u6E21\u3057\u305F\u3044\u3068\u304D\u306F\u30D5\u30A1\u30A4\u30EB\u3067\u9001\u3063\u3066\u304F\u3060\u3055\u3044\u3002\u732E\u7ACB\u5E16\u3092\u4F7F\u3063\u3066\u3044\u306A\u3044\u4EBA\u306B\u3082\u3001\u6587\u7AE0\u3060\u3051\u3067\u30EC\u30B7\u30D4\u304C\u8AAD\u3081\u308B\u3088\u3046\u306B\u9001\u3089\u308C\u307E\u3059\u3002")));
+}
+function ReceiveSheet({
+  recipe,
+  onClose,
+  onAdd,
+  onEditFirst
+}) {
+  if (!recipe) return null;
+  const r = recipe;
+  return React.createElement(Sheet, {
+    open: true,
+    title: "\u9001\u3089\u308C\u3066\u304D\u305F\u30EC\u30B7\u30D4",
+    onClose: onClose,
+    footer: React.createElement("div", {
+      className: "flex gap-2"
+    }, React.createElement("button", {
+      className: btnGhost + ' flex-1',
+      onClick: onEditFirst
+    }, React.createElement(Icon, {
+      name: "Pencil",
+      size: 16
+    }), React.createElement("span", {
+      className: "whitespace-nowrap"
+    }, "\u76F4\u3057\u3066\u8FFD\u52A0")), React.createElement("button", {
+      className: btnPrimary + ' flex-[2]',
+      onClick: onAdd
+    }, React.createElement(Icon, {
+      name: "BookmarkPlus",
+      size: 18
+    }), "\u732E\u7ACB\u5E16\u306B\u8FFD\u52A0"))
+  }, React.createElement("div", {
+    className: "flex flex-col gap-3"
+  }, React.createElement(Photo, {
+    r: r,
+    className: "w-full aspect-[16/9] rounded-2xl",
+    showTag: true
+  }), React.createElement("div", null, React.createElement("h3", {
+    className: "font-display text-xl font-bold"
+  }, r.name), React.createElement("p", {
+    className: "text-sm text-muted tnum"
+  }, r.kcal ? `約${r.kcal}kcal・` : '', "\u6750\u6599", r.ingredients.length, "\u54C1\u30FB\u624B\u9806", r.steps.length, "\u3064")), React.createElement("ul", {
+    className: "ticket rounded-2xl divide-y divide-line/70 text-sm"
+  }, r.ingredients.slice(0, 8).map((i, k) => React.createElement("li", {
+    key: k,
+    className: "flex justify-between gap-3 px-4 py-1.5"
+  }, React.createElement("span", null, i.name), React.createElement("span", {
+    className: "text-muted"
+  }, i.amount))), r.ingredients.length > 8 && React.createElement("li", {
+    className: "px-4 py-1.5 text-muted"
+  }, "\u307B\u304B", r.ingredients.length - 8, "\u54C1"))));
+}
 function FamilySection({
   backend,
   toast,
@@ -3697,7 +3955,7 @@ function Settings({
   }, React.createElement(Icon, {
     name: "Upload",
     size: 18
-  }), "JSON\u30D5\u30A1\u30A4\u30EB\u304B\u3089\u5FA9\u5143"), React.createElement("input", {
+  }), "JSON\u30D5\u30A1\u30A4\u30EB\u3092\u8AAD\u307F\u8FBC\u3080"), React.createElement("input", {
     ref: fileRef,
     id: "import-file",
     type: "file",
@@ -3725,7 +3983,7 @@ function Settings({
     }
   }, "\u3053\u306E\u5185\u5BB9\u3067\u5FA9\u5143"))), React.createElement("p", {
     className: "text-xs text-muted"
-  }, "\u5FA9\u5143\u3059\u308B\u3068\u3001\u540C\u3058\u30EC\u30B7\u30D4\u306F\u4E0A\u66F8\u304D\u3001\u65B0\u3057\u3044\u30EC\u30B7\u30D4\u306F\u8FFD\u52A0\u3055\u308C\u307E\u3059\u3002", backend.kind === 'cloud' ? '家族共有中は家族全員のデータに反映されます。' : '')), hasSamples && React.createElement("section", {
+  }, "\u30D0\u30C3\u30AF\u30A2\u30C3\u30D7\u3084\u3001\u9001\u3089\u308C\u3066\u304D\u305F\u30EC\u30B7\u30D4\u306E\u30D5\u30A1\u30A4\u30EB\u3092\u8AAD\u307F\u8FBC\u3081\u307E\u3059\u3002\u540C\u3058\u30EC\u30B7\u30D4\u306F\u4E0A\u66F8\u304D\u3001\u65B0\u3057\u3044\u30EC\u30B7\u30D4\u306F\u8FFD\u52A0\u3055\u308C\u307E\u3059\u3002", backend.kind === 'cloud' ? '家族共有中は家族全員のデータに反映されます。' : '')), hasSamples && React.createElement("section", {
     className: "flex flex-col gap-2"
   }, React.createElement("h3", {
     className: "font-display font-bold"
@@ -3767,6 +4025,52 @@ function App() {
   const [toastMsg, setToastMsg] = useState('');
   const tRef = useRef();
   const [invite, setInvite] = useState(() => parseInvite(location.hash));
+  const [sending, setSending] = useState(null);
+  const [received, setReceived] = useState(null);
+  useEffect(() => {
+    const check = async () => {
+      const c = recipeCodeIn(location.hash);
+      if (!c) return;
+      const r = await unpackRecipe(c);
+      history.replaceState(null, '', location.pathname + location.search);
+      if (r) setReceived(r);else toast('レシピのリンクを読み取れませんでした');
+    };
+    check();
+    addEventListener('hashchange', check);
+    return () => removeEventListener('hashchange', check);
+  }, []);
+  function addReceived(edit) {
+    const r = received;
+    setReceived(null);
+    const cats = [...new Set([...categories, ...r.categories])];
+    if (cats.length !== categories.length) setCategories(cats);
+    const base = {
+      ...r,
+      id: uid(),
+      photo: '',
+      fav: false,
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    };
+    if (edit) {
+      setEditing({
+        ...emptyForm(),
+        ...base,
+        id: null,
+        kcal: r.kcal ? String(r.kcal) : '',
+        ingredients: r.ingredients.length ? r.ingredients : [{
+          name: '',
+          amount: ''
+        }],
+        steps: r.steps.length ? r.steps : ['']
+      });
+      go('new');
+    } else {
+      wr(backend.putRecipe(base));
+      toast(`「${r.name}」を献立帖に追加しました`);
+      go('list');
+    }
+  }
   const snapRef = useRef({
     recipes: [],
     meta: {},
@@ -4030,7 +4334,7 @@ function App() {
     if (d.plan && Array.isArray(d.plan.days)) setPlan(d.plan);
     if (Array.isArray(d.shopping)) setShopping(d.shopping);
     if (Array.isArray(d.offDays)) setOffDays(d.offDays);
-    toast(`${n}件のレシピを復元しました`);
+    toast(d.kind === 'recipe' ? `「${(d.recipes[0] || {}).name || 'レシピ'}」を追加しました` : `${n}件のレシピを復元しました`);
     setSettings(false);
   }
   function makeList() {
@@ -4193,7 +4497,17 @@ function App() {
     },
     onDelete: deleteRecipe,
     onSaveGeneric: saveGeneric,
-    onFav: toggleFav
+    onFav: toggleFav,
+    onSend: r => setSending(r)
+  }), React.createElement(SendSheet, {
+    recipe: sending,
+    onClose: () => setSending(null),
+    toast: toast
+  }), React.createElement(ReceiveSheet, {
+    recipe: received,
+    onClose: () => setReceived(null),
+    onAdd: () => addReceived(false),
+    onEditFirst: () => addReceived(true)
   }), React.createElement(Settings, {
     open: settings,
     onClose: () => setSettings(false),
