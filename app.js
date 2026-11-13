@@ -1282,6 +1282,7 @@ function parseCaption(text, categories) {
     ingredients: [],
     steps: [],
     kcal: null,
+    kcalBasis: '1人分',
     kcalEstimated: false,
     url: '',
     cats: [],
@@ -1292,7 +1293,13 @@ function parseCaption(text, categories) {
   const tags = [...raw.matchAll(/#([^\s#]+)/g)].map(m => m[1]);
   res.cats = categories.filter(c => tags.some(t => kata2hira(t).includes(kata2hira(c)) || kata2hira(c).includes(kata2hira(t))));
   const kc = z2h(raw).match(/(\d{2,4})\s*(?:kcal|ｋｃａｌ|キロカロリー)/i) || z2h(raw).match(/カロリー[^\d\n]{0,8}(\d{2,4})/);
-  if (kc) res.kcal = +kc[1];
+  if (kc) {
+    res.kcal = +kc[1];
+    const ln = z2h(raw).split('\n').find(l => l.includes(kc[0])) || '';
+    const pm = ln.match(/(\d+)\s*人(?:分|前)/),
+      um = ln.match(/1\s*(個|切れ|枚|本|杯|皿|食)/);
+    res.kcalBasis = /全量|全部|合計|トータル/.test(ln) ? '全量' : pm ? pm[1] + '人分' : um ? '1' + um[1] + 'あたり' : /100\s*g/.test(ln) ? '100gあたり' : '1人分';
+  }
   const sv = z2h(raw).match(/(\d+)\s*人(?:分|前)/);
   if (sv) res.servings = +sv[1];
   const lines = raw.split(/\r?\n/).map(l => l.replace(EMOJI, '').replace(/#[^\s#]+/g, '').trim()).filter(Boolean);
@@ -2092,7 +2099,7 @@ function RecipeDetail({
     className: "text-honey"
   }), r.kcal, " kcal", React.createElement("span", {
     className: "font-normal text-muted text-xs"
-  }, "/1\u4EBA\u5206\u76EE\u5B89")) : null, (r.categories || []).map(c => React.createElement("span", {
+  }, "/", basisOf(r), " \u76EE\u5B89")) : null, (r.categories || []).map(c => React.createElement("span", {
     key: c,
     className: "text-xs bg-sunk rounded-full px-2 py-0.5"
   }, c)))), r.instaUrl && React.createElement("a", {
@@ -2143,6 +2150,8 @@ function RecipeDetail({
     className: "text-muted"
   }, "\u672A\u767B\u9332")))));
 }
+const KCAL_BASES = ['1人分', '2人分', '3人分', '4人分', '1個あたり', '1切れあたり', '100gあたり', '全量'];
+const basisOf = r => r && r.kcalBasis || '1人分';
 const emptyForm = () => ({
   id: null,
   name: '',
@@ -2160,6 +2169,7 @@ const emptyForm = () => ({
   }],
   steps: [''],
   kcal: '',
+  kcalBasis: '1人分',
   kcalEstimated: false,
   categories: []
 });
@@ -2263,6 +2273,7 @@ function RecipeForm({
           ingredients: r.ingredients.length ? r.ingredients : prev.ingredients,
           steps: r.steps.length ? r.steps : prev.steps,
           kcal: r.kcal ? String(r.kcal) : '',
+          kcalBasis: basisOf(r),
           kcalEstimated: false,
           categories: [...new Set([...prev.categories, ...r.categories])]
         }));
@@ -2279,6 +2290,7 @@ function RecipeForm({
       ingredients: p.ingredients.length ? p.ingredients : prev.ingredients,
       steps: p.steps.length ? p.steps : prev.steps,
       kcal: p.kcal != null ? String(p.kcal) : prev.kcal,
+      kcalBasis: p.kcal != null ? p.kcalEstimated ? '1人分' : p.kcalBasis : prev.kcalBasis,
       kcalEstimated: p.kcal != null ? p.kcalEstimated : prev.kcalEstimated,
       categories: [...new Set([...prev.categories, ...p.cats])]
     }));
@@ -2289,6 +2301,7 @@ function RecipeForm({
     const e = estimateKcal(ings, 2);
     if (e) {
       set('kcal', String(e));
+      set('kcalBasis', '1人分');
       set('kcalEstimated', true);
       toast('材料（2人分想定）から1人分を推定しました');
     } else toast('推定できる材料が見つかりませんでした');
@@ -2383,6 +2396,7 @@ function RecipeForm({
     }
     onSave({
       ...f,
+      kcalBasis: (f.kcalBasis || '').trim() || '1人分',
       name: f.name.trim(),
       kcal: f.kcal ? Math.round(+z2h(String(f.kcal)).replace(/[^\d.]/g, '') || 0) || null : null,
       ingredients: f.ingredients.filter(i => i.name.trim()).map(i => ({
@@ -2696,7 +2710,30 @@ function RecipeForm({
   }, React.createElement("label", {
     htmlFor: "kcal",
     className: "text-sm font-bold"
-  }, "\u63A8\u5B9A\u30AB\u30ED\u30EA\u30FC\uFF081\u4EBA\u5206\uFF09"), React.createElement("div", {
+  }, "\u30AB\u30ED\u30EA\u30FC\u306E\u76EE\u5B89"), React.createElement("div", {
+    className: "flex flex-col gap-1.5"
+  }, React.createElement("span", {
+    className: "text-xs text-muted"
+  }, "\u4F55\u3042\u305F\u308A\u306E\u30AB\u30ED\u30EA\u30FC\u304B"), React.createElement("div", {
+    className: "flex flex-wrap gap-1.5"
+  }, KCAL_BASES.map(b => React.createElement(Chip, {
+    small: true,
+    key: b,
+    active: (f.kcalBasis || '1人分') === b,
+    onClick: () => set('kcalBasis', b)
+  }, b)), React.createElement(Chip, {
+    small: true,
+    active: !KCAL_BASES.includes(f.kcalBasis || '1人分'),
+    onClick: () => {
+      if (KCAL_BASES.includes(f.kcalBasis || '1人分')) set('kcalBasis', '');
+    }
+  }, "\u305D\u306E\u4ED6")), !KCAL_BASES.includes(f.kcalBasis || '1人分') && React.createElement("input", {
+    id: "kcal-basis",
+    value: f.kcalBasis,
+    onChange: e => set('kcalBasis', e.target.value),
+    className: field + ' text-sm',
+    placeholder: "\u4F8B\uFF1A1\u30AB\u30C3\u30D7\u3042\u305F\u308A\u30016\u500B\u5206"
+  })), React.createElement("div", {
     className: "flex gap-2 items-center"
   }, React.createElement("div", {
     className: "relative flex-1"
@@ -3333,6 +3370,7 @@ function Shopping({
 const sendable = r => ({
   name: r.name,
   kcal: r.kcal || null,
+  kcalBasis: basisOf(r),
   categories: r.categories || [],
   instaUrl: r.instaUrl || '',
   ingredients: (r.ingredients || []).map(i => ({
@@ -3384,7 +3422,7 @@ async function recipeLink(r) {
 }
 function recipeText(r) {
   const L = [`【レシピ】${r.name}`];
-  if (r.kcal) L.push(`約${r.kcal}kcal（1人分）`);
+  if (r.kcal) L.push(`約${r.kcal}kcal（${basisOf(r)}）`);
   if ((r.ingredients || []).length) {
     L.push('', '■材料');
     r.ingredients.forEach(i => L.push(`・${i.name}${i.amount ? '　' + i.amount : ''}`));
@@ -3535,7 +3573,7 @@ function ReceiveSheet({
     className: "font-display text-xl font-bold"
   }, r.name), React.createElement("p", {
     className: "text-sm text-muted tnum"
-  }, r.kcal ? `約${r.kcal}kcal・` : '', "\u6750\u6599", r.ingredients.length, "\u54C1\u30FB\u624B\u9806", r.steps.length, "\u3064")), React.createElement("ul", {
+  }, r.kcal ? `約${r.kcal}kcal（${basisOf(r)}）・` : '', "\u6750\u6599", r.ingredients.length, "\u54C1\u30FB\u624B\u9806", r.steps.length, "\u3064")), React.createElement("ul", {
     className: "ticket rounded-2xl divide-y divide-line/70 text-sm"
   }, r.ingredients.slice(0, 8).map((i, k) => React.createElement("li", {
     key: k,
