@@ -1,0 +1,4052 @@
+/* わたしの献立帖 */
+const {
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  useCallback
+} = React;
+const LUCIDE = {
+  "ArrowLeftRight": [["path", {
+    "d": "M8 3 4 7l4 4"
+  }], ["path", {
+    "d": "M4 7h16"
+  }], ["path", {
+    "d": "m16 21 4-4-4-4"
+  }], ["path", {
+    "d": "M20 17H4"
+  }]],
+  "BookOpen": [["path", {
+    "d": "M12 7v14"
+  }], ["path", {
+    "d": "M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"
+  }]],
+  "BookmarkPlus": [["path", {
+    "d": "m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"
+  }], ["line", {
+    "x1": "12",
+    "x2": "12",
+    "y1": "7",
+    "y2": "13"
+  }], ["line", {
+    "x1": "15",
+    "x2": "9",
+    "y1": "10",
+    "y2": "10"
+  }]],
+  "Calculator": [["rect", {
+    "width": "16",
+    "height": "20",
+    "x": "4",
+    "y": "2",
+    "rx": "2"
+  }], ["line", {
+    "x1": "8",
+    "x2": "16",
+    "y1": "6",
+    "y2": "6"
+  }], ["line", {
+    "x1": "16",
+    "x2": "16",
+    "y1": "14",
+    "y2": "18"
+  }], ["path", {
+    "d": "M16 10h.01"
+  }], ["path", {
+    "d": "M12 10h.01"
+  }], ["path", {
+    "d": "M8 10h.01"
+  }], ["path", {
+    "d": "M12 14h.01"
+  }], ["path", {
+    "d": "M8 14h.01"
+  }], ["path", {
+    "d": "M12 18h.01"
+  }], ["path", {
+    "d": "M8 18h.01"
+  }]],
+  "CalendarDays": [["path", {
+    "d": "M8 2v4"
+  }], ["path", {
+    "d": "M16 2v4"
+  }], ["rect", {
+    "width": "18",
+    "height": "18",
+    "x": "3",
+    "y": "4",
+    "rx": "2"
+  }], ["path", {
+    "d": "M3 10h18"
+  }], ["path", {
+    "d": "M8 14h.01"
+  }], ["path", {
+    "d": "M12 14h.01"
+  }], ["path", {
+    "d": "M16 14h.01"
+  }], ["path", {
+    "d": "M8 18h.01"
+  }], ["path", {
+    "d": "M12 18h.01"
+  }], ["path", {
+    "d": "M16 18h.01"
+  }]],
+  "Camera": [["path", {
+    "d": "M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"
+  }], ["circle", {
+    "cx": "12",
+    "cy": "13",
+    "r": "3"
+  }]],
+  "Carrot": [["path", {
+    "d": "M2.27 21.7s9.87-3.5 12.73-6.36a4.5 4.5 0 0 0-6.36-6.37C5.77 11.84 2.27 21.7 2.27 21.7zM8.64 14l-2.05-2.04M15.34 15l-2.46-2.46"
+  }], ["path", {
+    "d": "M22 9s-1.33-2-3.5-2C16.86 7 15 9 15 9s1.33 2 3.5 2S22 9 22 9z"
+  }], ["path", {
+    "d": "M15 2s-2 1.33-2 3.5S15 9 15 9s2-1.84 2-3.5C17 3.33 15 2 15 2z"
+  }]],
+  "Check": [["path", {
+    "d": "M20 6 9 17l-5-5"
+  }]],
+  "ChefHat": [["path", {
+    "d": "M17 21a1 1 0 0 0 1-1v-5.35c0-.457.316-.844.727-1.041a4 4 0 0 0-2.134-7.589 5 5 0 0 0-9.186 0 4 4 0 0 0-2.134 7.588c.411.198.727.585.727 1.041V20a1 1 0 0 0 1 1Z"
+  }], ["path", {
+    "d": "M6 17h12"
+  }]],
+  "ChevronRight": [["path", {
+    "d": "m9 18 6-6-6-6"
+  }]],
+  "Circle": [["circle", {
+    "cx": "12",
+    "cy": "12",
+    "r": "10"
+  }]],
+  "ClipboardPaste": [["path", {
+    "d": "M15 2H9a1 1 0 0 0-1 1v2c0 .6.4 1 1 1h6c.6 0 1-.4 1-1V3c0-.6-.4-1-1-1Z"
+  }], ["path", {
+    "d": "M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2M16 4h2a2 2 0 0 1 2 2v2M11 14h10"
+  }], ["path", {
+    "d": "m17 10 4 4-4 4"
+  }]],
+  "Cloud": [["path", {
+    "d": "M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"
+  }]],
+  "CloudOff": [["path", {
+    "d": "m2 2 20 20"
+  }], ["path", {
+    "d": "M5.782 5.782A7 7 0 0 0 9 19h8.5a4.5 4.5 0 0 0 1.307-.193"
+  }], ["path", {
+    "d": "M21.532 16.5A4.5 4.5 0 0 0 17.5 10h-1.79A7.008 7.008 0 0 0 10 5.07"
+  }]],
+  "CloudUpload": [["path", {
+    "d": "M12 13v8"
+  }], ["path", {
+    "d": "M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"
+  }], ["path", {
+    "d": "m8 17 4-4 4 4"
+  }]],
+  "CookingPot": [["path", {
+    "d": "M2 12h20"
+  }], ["path", {
+    "d": "M20 12v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8"
+  }], ["path", {
+    "d": "m4 8 16-4"
+  }], ["path", {
+    "d": "m8.86 6.78-.45-1.81a2 2 0 0 1 1.45-2.43l1.94-.48a2 2 0 0 1 2.43 1.46l.45 1.8"
+  }]],
+  "Copy": [["rect", {
+    "width": "14",
+    "height": "14",
+    "x": "8",
+    "y": "8",
+    "rx": "2",
+    "ry": "2"
+  }], ["path", {
+    "d": "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"
+  }]],
+  "Database": [["ellipse", {
+    "cx": "12",
+    "cy": "5",
+    "rx": "9",
+    "ry": "3"
+  }], ["path", {
+    "d": "M3 5V19A9 3 0 0 0 21 19V5"
+  }], ["path", {
+    "d": "M3 12A9 3 0 0 0 21 12"
+  }]],
+  "Download": [["path", {
+    "d": "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+  }], ["polyline", {
+    "points": "7 10 12 15 17 10"
+  }], ["line", {
+    "x1": "12",
+    "x2": "12",
+    "y1": "15",
+    "y2": "3"
+  }]],
+  "ExternalLink": [["path", {
+    "d": "M15 3h6v6"
+  }], ["path", {
+    "d": "M10 14 21 3"
+  }], ["path", {
+    "d": "M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+  }]],
+  "Flame": [["path", {
+    "d": "M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"
+  }]],
+  "HardDriveDownload": [["path", {
+    "d": "M12 2v8"
+  }], ["path", {
+    "d": "m16 6-4 4-4-4"
+  }], ["rect", {
+    "width": "20",
+    "height": "8",
+    "x": "2",
+    "y": "14",
+    "rx": "2"
+  }], ["path", {
+    "d": "M6 18h.01"
+  }], ["path", {
+    "d": "M10 18h.01"
+  }]],
+  "Heart": [["path", {
+    "d": "M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"
+  }]],
+  "Instagram": [["rect", {
+    "width": "20",
+    "height": "20",
+    "x": "2",
+    "y": "2",
+    "rx": "5",
+    "ry": "5"
+  }], ["path", {
+    "d": "M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"
+  }], ["line", {
+    "x1": "17.5",
+    "x2": "17.51",
+    "y1": "6.5",
+    "y2": "6.5"
+  }]],
+  "ListOrdered": [["path", {
+    "d": "M10 12h11"
+  }], ["path", {
+    "d": "M10 18h11"
+  }], ["path", {
+    "d": "M10 6h11"
+  }], ["path", {
+    "d": "M4 10h2"
+  }], ["path", {
+    "d": "M4 6h1v4"
+  }], ["path", {
+    "d": "M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"
+  }]],
+  "ListPlus": [["path", {
+    "d": "M11 12H3"
+  }], ["path", {
+    "d": "M16 6H3"
+  }], ["path", {
+    "d": "M16 18H3"
+  }], ["path", {
+    "d": "M18 9v6"
+  }], ["path", {
+    "d": "M21 12h-6"
+  }]],
+  "ListX": [["path", {
+    "d": "M11 12H3"
+  }], ["path", {
+    "d": "M16 6H3"
+  }], ["path", {
+    "d": "M16 18H3"
+  }], ["path", {
+    "d": "m19 10-4 4"
+  }], ["path", {
+    "d": "m15 10 4 4"
+  }]],
+  "Loader": [["path", {
+    "d": "M12 2v4"
+  }], ["path", {
+    "d": "m16.2 7.8 2.9-2.9"
+  }], ["path", {
+    "d": "M18 12h4"
+  }], ["path", {
+    "d": "m16.2 16.2 2.9 2.9"
+  }], ["path", {
+    "d": "M12 18v4"
+  }], ["path", {
+    "d": "m4.9 19.1 2.9-2.9"
+  }], ["path", {
+    "d": "M2 12h4"
+  }], ["path", {
+    "d": "m4.9 4.9 2.9 2.9"
+  }]],
+  "LogIn": [["path", {
+    "d": "M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"
+  }], ["polyline", {
+    "points": "10 17 15 12 10 7"
+  }], ["line", {
+    "x1": "15",
+    "x2": "3",
+    "y1": "12",
+    "y2": "12"
+  }]],
+  "LogOut": [["path", {
+    "d": "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
+  }], ["polyline", {
+    "points": "16 17 21 12 16 7"
+  }], ["line", {
+    "x1": "21",
+    "x2": "9",
+    "y1": "12",
+    "y2": "12"
+  }]],
+  "Minus": [["path", {
+    "d": "M5 12h14"
+  }]],
+  "Moon": [["path", {
+    "d": "M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"
+  }]],
+  "PenLine": [["path", {
+    "d": "M12 20h9"
+  }], ["path", {
+    "d": "M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"
+  }]],
+  "Pencil": [["path", {
+    "d": "M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"
+  }], ["path", {
+    "d": "m15 5 4 4"
+  }]],
+  "Plus": [["path", {
+    "d": "M5 12h14"
+  }], ["path", {
+    "d": "M12 5v14"
+  }]],
+  "PlusCircle": [["circle", {
+    "cx": "12",
+    "cy": "12",
+    "r": "10"
+  }], ["path", {
+    "d": "M8 12h8"
+  }], ["path", {
+    "d": "M12 8v8"
+  }]],
+  "QrCode": [["rect", {
+    "width": "5",
+    "height": "5",
+    "x": "3",
+    "y": "3",
+    "rx": "1"
+  }], ["rect", {
+    "width": "5",
+    "height": "5",
+    "x": "16",
+    "y": "3",
+    "rx": "1"
+  }], ["rect", {
+    "width": "5",
+    "height": "5",
+    "x": "3",
+    "y": "16",
+    "rx": "1"
+  }], ["path", {
+    "d": "M21 16h-3a2 2 0 0 0-2 2v3"
+  }], ["path", {
+    "d": "M21 21v.01"
+  }], ["path", {
+    "d": "M12 7v3a2 2 0 0 1-2 2H7"
+  }], ["path", {
+    "d": "M3 12h.01"
+  }], ["path", {
+    "d": "M12 3h.01"
+  }], ["path", {
+    "d": "M12 16v.01"
+  }], ["path", {
+    "d": "M16 12h1"
+  }], ["path", {
+    "d": "M21 12v.01"
+  }], ["path", {
+    "d": "M12 21v-1"
+  }]],
+  "Refrigerator": [["path", {
+    "d": "M5 6a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6Z"
+  }], ["path", {
+    "d": "M5 10h14"
+  }], ["path", {
+    "d": "M15 7v6"
+  }]],
+  "Save": [["path", {
+    "d": "M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"
+  }], ["path", {
+    "d": "M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"
+  }], ["path", {
+    "d": "M7 3v4a1 1 0 0 0 1 1h7"
+  }]],
+  "Search": [["circle", {
+    "cx": "11",
+    "cy": "11",
+    "r": "8"
+  }], ["path", {
+    "d": "m21 21-4.3-4.3"
+  }]],
+  "Send": [["path", {
+    "d": "M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"
+  }], ["path", {
+    "d": "m21.854 2.147-10.94 10.939"
+  }]],
+  "Settings": [["path", {
+    "d": "M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"
+  }], ["circle", {
+    "cx": "12",
+    "cy": "12",
+    "r": "3"
+  }]],
+  "ShoppingBasket": [["path", {
+    "d": "m15 11-1 9"
+  }], ["path", {
+    "d": "m19 11-4-7"
+  }], ["path", {
+    "d": "M2 11h20"
+  }], ["path", {
+    "d": "m3.5 11 1.6 7.4a2 2 0 0 0 2 1.6h9.8a2 2 0 0 0 2-1.6l1.7-7.4"
+  }], ["path", {
+    "d": "M4.5 15.5h15"
+  }], ["path", {
+    "d": "m5 11 4-7"
+  }], ["path", {
+    "d": "m9 11 1 9"
+  }]],
+  "ShoppingCart": [["circle", {
+    "cx": "8",
+    "cy": "21",
+    "r": "1"
+  }], ["circle", {
+    "cx": "19",
+    "cy": "21",
+    "r": "1"
+  }], ["path", {
+    "d": "M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"
+  }]],
+  "Shuffle": [["path", {
+    "d": "M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22"
+  }], ["path", {
+    "d": "m18 2 4 4-4 4"
+  }], ["path", {
+    "d": "M2 6h1.9c1.5 0 2.9.9 3.6 2.2"
+  }], ["path", {
+    "d": "M22 18h-5.9c-1.3 0-2.6-.7-3.3-1.8l-.5-.8"
+  }], ["path", {
+    "d": "m18 14 4 4-4 4"
+  }]],
+  "Soup": [["path", {
+    "d": "M12 21a9 9 0 0 0 9-9H3a9 9 0 0 0 9 9Z"
+  }], ["path", {
+    "d": "M7 21h10"
+  }], ["path", {
+    "d": "M19.5 12 22 6"
+  }], ["path", {
+    "d": "M16.25 3c.27.1.8.53.75 1.36-.06.83-.93 1.2-1 2.02-.05.78.34 1.24.73 1.62"
+  }], ["path", {
+    "d": "M11.25 3c.27.1.8.53.74 1.36-.05.83-.93 1.2-.98 2.02-.06.78.33 1.24.72 1.62"
+  }], ["path", {
+    "d": "M6.25 3c.27.1.8.53.75 1.36-.06.83-.93 1.2-1 2.02-.05.78.34 1.24.74 1.62"
+  }]],
+  "Sparkles": [["path", {
+    "d": "M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"
+  }], ["path", {
+    "d": "M20 3v4"
+  }], ["path", {
+    "d": "M22 5h-4"
+  }], ["path", {
+    "d": "M4 17v2"
+  }], ["path", {
+    "d": "M5 18H3"
+  }]],
+  "Tag": [["path", {
+    "d": "M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"
+  }], ["circle", {
+    "cx": "7.5",
+    "cy": "7.5",
+    "r": ".5",
+    "fill": "currentColor"
+  }]],
+  "Tags": [["path", {
+    "d": "m15 5 6.3 6.3a2.4 2.4 0 0 1 0 3.4L17 19"
+  }], ["path", {
+    "d": "M9.586 5.586A2 2 0 0 0 8.172 5H3a1 1 0 0 0-1 1v5.172a2 2 0 0 0 .586 1.414L8.29 18.29a2.426 2.426 0 0 0 3.42 0l3.58-3.58a2.426 2.426 0 0 0 0-3.42z"
+  }], ["circle", {
+    "cx": "6.5",
+    "cy": "9.5",
+    "r": ".5",
+    "fill": "currentColor"
+  }]],
+  "Trash2": [["path", {
+    "d": "M3 6h18"
+  }], ["path", {
+    "d": "M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"
+  }], ["path", {
+    "d": "M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"
+  }], ["line", {
+    "x1": "10",
+    "x2": "10",
+    "y1": "11",
+    "y2": "17"
+  }], ["line", {
+    "x1": "14",
+    "x2": "14",
+    "y1": "11",
+    "y2": "17"
+  }]],
+  "Upload": [["path", {
+    "d": "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+  }], ["polyline", {
+    "points": "17 8 12 3 7 8"
+  }], ["line", {
+    "x1": "12",
+    "x2": "12",
+    "y1": "3",
+    "y2": "15"
+  }]],
+  "Users": [["path", {
+    "d": "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"
+  }], ["circle", {
+    "cx": "9",
+    "cy": "7",
+    "r": "4"
+  }], ["path", {
+    "d": "M22 21v-2a4 4 0 0 0-3-3.87"
+  }], ["path", {
+    "d": "M16 3.13a4 4 0 0 1 0 7.75"
+  }]],
+  "Wand2": [["path", {
+    "d": "m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72"
+  }], ["path", {
+    "d": "m14 7 3 3"
+  }], ["path", {
+    "d": "M5 6v4"
+  }], ["path", {
+    "d": "M19 14v4"
+  }], ["path", {
+    "d": "M10 2v2"
+  }], ["path", {
+    "d": "M7 8H3"
+  }], ["path", {
+    "d": "M21 16h-4"
+  }], ["path", {
+    "d": "M11 3H9"
+  }]],
+  "X": [["path", {
+    "d": "M18 6 6 18"
+  }], ["path", {
+    "d": "m6 6 12 12"
+  }]]
+};
+function Icon({
+  name,
+  size = 18,
+  className = '',
+  strokeWidth = 2,
+  fill
+}) {
+  const nodes = LUCIDE[name] || LUCIDE.Circle || [];
+  return React.createElement("svg", {
+    xmlns: "http://www.w3.org/2000/svg",
+    width: size,
+    height: size,
+    viewBox: "0 0 24 24",
+    fill: fill || 'none',
+    stroke: "currentColor",
+    strokeWidth: strokeWidth,
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    className: 'shrink-0 ' + className,
+    "aria-hidden": "true"
+  }, nodes.map(([tag, attrs], i) => React.createElement(tag, {
+    key: i,
+    ...attrs
+  })));
+}
+const FOODCOL = [[/鶏|ささみ|手羽|唐揚/, '#e6bf8a'], [/豚|べーこん|はむ/, '#d99a84'], [/牛|ひき肉|みんち|はんばーぐ/, '#8f4f3a'], [/鮭|さーもん/, '#f0875a'], [/さば|ぶり|たら/, '#a9a39a'], [/えび/, '#ef7d5e'], [/つな/, '#d8c4a6'], [/卵|たまご/, '#f5c842'], [/とまと|けちゃっぷ/, '#d8432e'], [/きゃべつ|れたす|きゅうり/, '#a9c96a'], [/ほうれん草|小松菜|ねぎ|ぶろっこりー|ぴーまん|しそ/, '#4f8a3c'], [/にんじん|かぼちゃ/, '#ee8a2a'], [/玉ねぎ|もやし|大根|白菜|豆腐/, '#f3ecd8'], [/なす/, '#5c3b6e'], [/じゃがいも|さつまいも/, '#e9cf8e'], [/しめじ|えのき|しいたけ|きのこ|まいたけ|えりんぎ/, '#c7a57a'], [/ちーず|ばたー/, '#f2d37a'], [/かれー/, '#b8762a'], [/味噌|みそ/, '#a8692c'], [/塩昆布|わかめ|のり/, '#3d4a35']];
+function hashStr(s) {
+  let h = 2166136261;
+  for (const c of s || '') h = Math.imul(h ^ c.charCodeAt(0), 16777619);
+  return h >>> 0;
+}
+function rng(seed) {
+  let x = seed || 1;
+  return () => {
+    x ^= x << 13;
+    x ^= x >>> 17;
+    x ^= x << 5;
+    return (x >>> 0) % 10000 / 10000;
+  };
+}
+const illoCache = new Map();
+function dishIllustration(r) {
+  const key = (r.id || r.name) + '|' + (r.updatedAt || '');
+  if (illoCache.has(key)) return illoCache.get(key);
+  let url = '';
+  try {
+    const W = 480,
+      H = 360,
+      c = document.createElement('canvas');
+    c.width = W;
+    c.height = H;
+    const g = c.getContext('2d');
+    const rand = rng(hashStr(r.name));
+    const names = (r.ingredients || []).map(i => canon(i.name)).concat(canon(r.name));
+    const cols = [];
+    names.forEach(n => {
+      const f = FOODCOL.find(([re]) => re.test(n));
+      if (f && !cols.includes(f[1])) cols.push(f[1]);
+    });
+    if (!cols.length) cols.push('#d9b88a', '#7fa45a');
+    const n = canon(r.name);
+    const kind = /汁|すーぷ|みそ汁|豚汁|しちゅー/.test(n) ? 'soup' : /丼|かれー|ごはん|ちゃーはん|おむらいす/.test(n) ? 'rice' : /ぱすた|うどん|そば|麺|やきそば/.test(n) ? 'noodle' : 'plate';
+    const cloth = ['#efe3cf', '#e8dcc6', '#f0e6d6'][Math.floor(rand() * 3)];
+    g.fillStyle = cloth;
+    g.fillRect(0, 0, W, H);
+    g.strokeStyle = 'rgba(150,110,70,.18)';
+    g.lineWidth = 14;
+    for (let x = -H; x < W; x += 46) {
+      g.beginPath();
+      g.moveTo(x, 0);
+      g.lineTo(x + H, H);
+      g.stroke();
+    }
+    g.fillStyle = '#6f8a4a';
+    g.fillRect(W * .06, H * .12, W * .05, H * .76);
+    g.fillStyle = '#b48a5a';
+    g.fillRect(W * .89, H * .1, W * .035, H * .8);
+    const cx = W / 2,
+      cy = H / 2 + 6,
+      R = kind === 'plate' ? 140 : 122;
+    g.fillStyle = 'rgba(60,40,25,.18)';
+    g.beginPath();
+    g.ellipse(cx + 8, cy + 12, R, R * .96, 0, 0, 7);
+    g.fill();
+    g.fillStyle = kind === 'soup' ? '#7a4a2a' : '#fbf8f1';
+    g.beginPath();
+    g.arc(cx, cy, R, 0, 7);
+    g.fill();
+    g.strokeStyle = 'rgba(120,90,60,.25)';
+    g.lineWidth = 3;
+    g.beginPath();
+    g.arc(cx, cy, R * .82, 0, 7);
+    g.stroke();
+    if (kind === 'soup') {
+      g.fillStyle = '#c98f4f';
+      g.beginPath();
+      g.arc(cx, cy, R * .8, 0, 7);
+      g.fill();
+    }
+    if (kind === 'rice') {
+      g.fillStyle = '#fffdf6';
+      g.beginPath();
+      g.arc(cx, cy, R * .72, 0, 7);
+      g.fill();
+      if (/かれー/.test(n)) {
+        g.fillStyle = '#b8762a';
+        g.beginPath();
+        g.ellipse(cx + R * .18, cy, R * .5, R * .62, 0, 0, 7);
+        g.fill();
+      }
+    }
+    const inner = R * (kind === 'plate' ? .66 : .62);
+    if (kind === 'noodle') {
+      g.lineWidth = 9;
+      g.lineCap = 'round';
+      for (let k = 0; k < 26; k++) {
+        g.strokeStyle = k % 2 ? '#f3dfa6' : '#ebd08c';
+        g.beginPath();
+        const a = rand() * 7,
+          rr = rand() * inner * .8;
+        g.arc(cx + Math.cos(a) * rr * .3, cy + Math.sin(a) * rr * .3, inner * .35 + rand() * inner * .5, a, a + 1.2 + rand());
+        g.stroke();
+      }
+    }
+    const pieces = kind === 'soup' ? 16 : 24;
+    for (let k = 0; k < pieces; k++) {
+      const col = cols[k % cols.length];
+      const a = rand() * Math.PI * 2,
+        d = Math.sqrt(rand()) * inner;
+      const x = cx + Math.cos(a) * d,
+        y = cy + Math.sin(a) * d,
+        s = 10 + rand() * (kind === 'plate' ? 22 : 16);
+      g.save();
+      g.translate(x, y);
+      g.rotate(rand() * 3);
+      g.fillStyle = col;
+      g.strokeStyle = 'rgba(60,35,20,.18)';
+      g.lineWidth = 2;
+      g.beginPath();
+      if (k % 3 === 0) {
+        g.ellipse(0, 0, s, s * .62, 0, 0, 7);
+      } else if (k % 3 === 1) {
+        g.roundRect ? g.roundRect(-s * .7, -s * .5, s * 1.4, s, s * .25) : g.rect(-s * .7, -s * .5, s * 1.4, s);
+      } else {
+        g.moveTo(-s * .8, s * .5);
+        g.lineTo(0, -s * .7);
+        g.lineTo(s * .8, s * .5);
+        g.closePath();
+      }
+      g.fill();
+      g.stroke();
+      g.fillStyle = 'rgba(255,255,255,.28)';
+      g.beginPath();
+      g.ellipse(-s * .25, -s * .15, s * .25, s * .12, 0, 0, 7);
+      g.fill();
+      g.restore();
+    }
+    if (kind === 'plate' || kind === 'rice') {
+      g.fillStyle = '#4f8a3c';
+      for (let k = 0; k < 5; k++) {
+        const a = rand() * 7,
+          d = inner * .5 * rand();
+        g.beginPath();
+        g.ellipse(cx + Math.cos(a) * d, cy + Math.sin(a) * d, 4, 2.2, a, 0, 7);
+        g.fill();
+      }
+    }
+    url = c.toDataURL('image/jpeg', .85);
+  } catch (e) {
+    url = '';
+  }
+  illoCache.set(key, url);
+  return url;
+}
+let dbp = null,
+  idbOK = false;
+const mem = {
+  recipes: new Map(),
+  meta: new Map()
+};
+function openDB() {
+  return new Promise((res, rej) => {
+    try {
+      const r = indexedDB.open('kondate-cho', 1);
+      r.onupgradeneeded = () => {
+        const d = r.result;
+        if (!d.objectStoreNames.contains('recipes')) d.createObjectStore('recipes', {
+          keyPath: 'id'
+        });
+        if (!d.objectStoreNames.contains('meta')) d.createObjectStore('meta');
+      };
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    } catch (e) {
+      rej(e);
+    }
+  });
+}
+function run(st, mode, op) {
+  return dbp.then(d => new Promise((res, rej) => {
+    const t = d.transaction(st, mode);
+    const r = op(t.objectStore(st));
+    t.oncomplete = () => res(r ? r.result : undefined);
+    t.onerror = () => rej(t.error);
+    t.onabort = () => rej(t.error);
+  }));
+}
+const store = {
+  async init() {
+    try {
+      dbp = openDB();
+      await dbp;
+      idbOK = true;
+      try {
+        navigator.storage && navigator.storage.persist && navigator.storage.persist();
+      } catch (e) {}
+    } catch (e) {
+      idbOK = false;
+    }
+    return idbOK;
+  },
+  async all() {
+    if (!idbOK) return [...mem.recipes.values()];
+    return run('recipes', 'readonly', s => s.getAll());
+  },
+  async put(r) {
+    if (!idbOK) {
+      mem.recipes.set(r.id, r);
+      return;
+    }
+    return run('recipes', 'readwrite', s => s.put(r));
+  },
+  async del(id) {
+    if (!idbOK) {
+      mem.recipes.delete(id);
+      return;
+    }
+    return run('recipes', 'readwrite', s => s.delete(id));
+  },
+  async clear() {
+    if (!idbOK) {
+      mem.recipes.clear();
+      return;
+    }
+    return run('recipes', 'readwrite', s => s.clear());
+  },
+  async getMeta(k) {
+    if (!idbOK) return mem.meta.get(k);
+    return run('meta', 'readonly', s => s.get(k));
+  },
+  async setMeta(k, v) {
+    if (!idbOK) {
+      mem.meta.set(k, v);
+      return;
+    }
+    return run('meta', 'readwrite', s => s.put(v, k));
+  }
+};
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const LS = {
+  get(k, d) {
+    try {
+      const v = localStorage.getItem('kondate:' + k);
+      return v == null ? d : JSON.parse(v);
+    } catch (e) {
+      return d;
+    }
+  },
+  set(k, v) {
+    try {
+      localStorage.setItem('kondate:' + k, JSON.stringify(v));
+    } catch (e) {}
+  },
+  del(k) {
+    try {
+      localStorage.removeItem('kondate:' + k);
+    } catch (e) {}
+  }
+};
+const clean = v => JSON.parse(JSON.stringify(v === undefined ? null : v));
+const withTimeout = (p, ms) => Promise.race([p, new Promise(res => setTimeout(() => res('timeout'), ms))]);
+function createLocalBackend() {
+  const cache = {
+    recipes: [],
+    meta: {},
+    shopping: []
+  };
+  let emit = () => {};
+  const b = {
+    kind: 'local',
+    ok: true,
+    async start(h) {
+      emit = () => {
+        h.recipes([...cache.recipes]);
+        h.meta({
+          ...cache.meta
+        });
+        h.shopping([...cache.shopping]);
+      };
+      b.ok = await store.init();
+      try {
+        cache.recipes = await store.all();
+        for (const k of ['categories', 'plan', 'offDays', 'seeded']) {
+          const v = await store.getMeta(k);
+          if (v !== undefined) cache.meta[k] = v;
+        }
+        cache.shopping = (await store.getMeta('shopping')) || [];
+      } catch (e) {
+        b.ok = false;
+      }
+      emit();
+      return () => {
+        emit = () => {};
+      };
+    },
+    putRecipe(r) {
+      cache.recipes = [...cache.recipes.filter(x => x.id !== r.id), r];
+      emit();
+      return store.put(r);
+    },
+    delRecipe(id) {
+      cache.recipes = cache.recipes.filter(x => x.id !== id);
+      emit();
+      return store.del(id);
+    },
+    setMeta(k, v) {
+      cache.meta = {
+        ...cache.meta,
+        [k]: v
+      };
+      emit();
+      return store.setMeta(k, v);
+    },
+    shopReplace(items) {
+      cache.shopping = items;
+      emit();
+      return store.setMeta('shopping', items);
+    },
+    snapshot() {
+      return {
+        recipes: cache.recipes,
+        meta: cache.meta,
+        shopping: cache.shopping
+      };
+    }
+  };
+  return b;
+}
+function parseFirebaseConfig(text) {
+  if (!text) return null;
+  try {
+    const j = JSON.parse(text);
+    if (j && j.apiKey && j.projectId) return j;
+  } catch (e) {}
+  const o = {};
+  for (const k of ['apiKey', 'authDomain', 'projectId', 'storageBucket', 'messagingSenderId', 'appId']) {
+    const m = text.match(new RegExp(k + '["\']?\\s*[:=]\\s*["\']([^"\']+)["\']'));
+    if (m) o[k] = m[1];
+  }
+  return o.apiKey && o.projectId && o.appId ? o : null;
+}
+function fbErrorText(e) {
+  const c = e && e.code || '';
+  if (/operation-not-allowed|admin-restricted/.test(c)) return 'Firebaseで「匿名ログイン」が有効になっていません。手順書の「Authentication」の項目を確認してください。';
+  if (/configuration-not-found/.test(c)) return 'FirebaseでAuthenticationがまだ始まっていません。手順書の「Authentication」の項目を確認してください。';
+  if (/permission-denied/.test(c)) return 'データベースのルールで読み書きが拒否されました。手順書の「ルール」をそのまま貼り付けて公開してください。';
+  if (/api-key-not-valid|invalid-api-key/.test(c)) return 'Firebaseの設定（apiKey）が正しくないようです。設定をもう一度貼り付けてください。';
+  if (/network|unavailable/.test(c)) return 'インターネットにつながっていません。つながったら自動で同期されます。';
+  if (/not-found/.test(c)) return 'Firestore Databaseがまだ作成されていません。手順書の「Firestore」の項目を確認してください。';
+  return 'クラウドに接続できませんでした（' + (c || e && e.message || '不明なエラー') + '）';
+}
+let fbApp = null;
+async function initFirebase(cfg) {
+  if (!window.firebase) throw {
+    code: 'load-failed',
+    message: 'Firebaseを読み込めませんでした。通信状態を確認してください。'
+  };
+  if (!fbApp) {
+    fbApp = firebase.initializeApp(cfg);
+    try {
+      await firebase.firestore().enablePersistence({
+        synchronizeTabs: true
+      });
+    } catch (e) {}
+  }
+  const user = await new Promise(res => {
+    const un = firebase.auth().onAuthStateChanged(u => {
+      un();
+      res(u);
+    });
+  });
+  if (!user) await firebase.auth().signInAnonymously();
+  return firebase.firestore();
+}
+function createCloudBackend(cfg, code) {
+  let db = null;
+  const unsubs = [];
+  let onErr = () => {};
+  const fam = () => db.collection('families').doc(code);
+  const wr = p => {
+    if (p && p.catch) p.catch(e => {
+      console.error(e);
+      onErr(e);
+    });
+    return p;
+  };
+  const b = {
+    kind: 'cloud',
+    code,
+    ok: true,
+    async connect() {
+      db = await initFirebase(cfg);
+      return db;
+    },
+    async start(h) {
+      onErr = h.error;
+      await b.connect();
+      let first = 0;
+      const ready = () => {
+        if (++first === 3 && h.ready) h.ready();
+      };
+      unsubs.push(fam().collection('recipes').onSnapshot(s => {
+        h.recipes(s.docs.map(d => d.data()));
+        ready();
+      }, e => h.error(e)));
+      unsubs.push(fam().collection('meta').onSnapshot(s => {
+        const m = {};
+        s.docs.forEach(d => m[d.id] = d.data().value);
+        h.meta(m);
+        ready();
+      }, e => h.error(e)));
+      unsubs.push(fam().collection('shopping').onSnapshot(s => {
+        h.shopping(s.docs.map(d => d.data()));
+        ready();
+      }, e => h.error(e)));
+      return () => unsubs.forEach(u => u());
+    },
+    putRecipe(r) {
+      return wr(fam().collection('recipes').doc(r.id).set(clean(r)));
+    },
+    delRecipe(id) {
+      return wr(fam().collection('recipes').doc(id).delete());
+    },
+    setMeta(k, v) {
+      return wr(fam().collection('meta').doc(k).set({
+        value: clean(v),
+        updatedAt: Date.now()
+      }));
+    },
+    shopSet(it) {
+      return wr(fam().collection('shopping').doc(it.id).set(clean(it)));
+    },
+    shopDel(ids) {
+      const bt = db.batch();
+      ids.forEach(id => bt.delete(fam().collection('shopping').doc(id)));
+      return wr(bt.commit());
+    },
+    async probe() {
+      await b.connect();
+      await fam().collection('meta').doc('family').set({
+        value: {
+          createdAt: Date.now()
+        },
+        updatedAt: Date.now()
+      }, {
+        merge: true
+      });
+      return true;
+    },
+    async uploadAll({
+      recipes = [],
+      meta = {},
+      shopping = []
+    }) {
+      const ps = [];
+      for (let i = 0; i < recipes.length; i += 12) {
+        const bt = db.batch();
+        recipes.slice(i, i + 12).forEach(r => bt.set(fam().collection('recipes').doc(r.id), clean(r)));
+        ps.push(bt.commit());
+      }
+      const bt = db.batch();
+      Object.entries(meta).forEach(([k, v]) => {
+        if (v !== undefined && k !== 'seeded') bt.set(fam().collection('meta').doc(k), {
+          value: clean(v),
+          updatedAt: Date.now()
+        });
+      });
+      shopping.forEach(it => bt.set(fam().collection('shopping').doc(it.id), clean(it)));
+      ps.push(bt.commit());
+      return withTimeout(Promise.all(ps), 30000);
+    }
+  };
+  return b;
+}
+function genFamilyCode() {
+  const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const a = new Uint32Array(16);
+  crypto.getRandomValues(a);
+  let s = '';
+  a.forEach((v, i) => {
+    s += A[v % A.length];
+    if (i % 4 === 3 && i < 15) s += '-';
+  });
+  return s;
+}
+const b64e = s => btoa(unescape(encodeURIComponent(s))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const b64d = s => decodeURIComponent(escape(atob(s.replace(/-/g, '+').replace(/_/g, '/'))));
+function inviteLink(cfg, code) {
+  const c = {
+    apiKey: cfg.apiKey,
+    authDomain: cfg.authDomain,
+    projectId: cfg.projectId,
+    appId: cfg.appId
+  };
+  return location.origin + location.pathname + '#join=' + b64e(JSON.stringify({
+    v: 1,
+    c,
+    f: code
+  }));
+}
+function parseInvite(text) {
+  try {
+    const m = String(text || '').match(/#?join=([A-Za-z0-9_-]+)/);
+    if (!m) return null;
+    const j = JSON.parse(b64d(m[1]));
+    if (j && j.c && j.c.apiKey && j.f) return {
+      cfg: j.c,
+      code: j.f
+    };
+  } catch (e) {}
+  return null;
+}
+function qrDataURL(text) {
+  try {
+    const q = qrcode(0, 'L');
+    q.addData(text);
+    q.make();
+    return q.createDataURL(5, 2);
+  } catch (e) {
+    return '';
+  }
+}
+async function shareOrCopy(text, title, toast) {
+  try {
+    if (navigator.share) {
+      await navigator.share({
+        title,
+        text
+      });
+      return;
+    }
+  } catch (e) {
+    if (e && e.name === 'AbortError') return;
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    toast('コピーしました。LINEなどに貼り付けて送ってください');
+  } catch (e) {
+    toast('コピーできませんでした。長押しで選択してください');
+  }
+}
+function downloadText(name, text) {
+  const blob = new Blob([text], {
+    type: 'application/json'
+  });
+  const u = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = u;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(u), 3000);
+}
+const z2h = s => (s || '').replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).replace(/．/g, '.').replace(/／/g, '/').replace(/½/g, '1/2').replace(/¼/g, '1/4').replace(/¾/g, '3/4');
+const kata2hira = s => (s || '').replace(/[ァ-ヶ]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x60));
+const SYN = [['玉ねぎ', 'たまねぎ', '玉葱'], ['にんじん', '人参'], ['じゃがいも', '馬鈴薯'], ['しょうゆ', '醤油'], ['長ねぎ', 'ねぎ', '葱'], ['卵', 'たまご', '玉子'], ['豆腐', 'とうふ'], ['しいたけ', '椎茸'], ['しょうが', '生姜'], ['にんにく', '大蒜'], ['鮭', 'さけ', 'さーもん'], ['さば', '鯖'], ['ごはん', 'ご飯'], ['なす', '茄子'], ['ほうれん草', 'ほうれんそう'], ['こしょう', '胡椒'], ['砂糖', 'さとう'], ['ごま', '胡麻'], ['きゃべつ', 'キャベツ'], ['ぶろっこりー', 'ブロッコリー'], ['ぴーまん', 'ピーマン'], ['もやし', '萌やし'], ['大根', 'だいこん'], ['白菜', 'はくさい'], ['きのこ', '茸']].map(g => g.map(kata2hira));
+function canon(name) {
+  let n = kata2hira(z2h(name || '')).replace(/[（(][^）)]*[）)]/g, '').replace(/[\s　・●○◯◎★☆※]/g, '').toLowerCase();
+  for (const g of SYN) {
+    for (const w of g) {
+      if (w && n.includes(w)) {
+        n = n.replace(w, g[0]);
+        break;
+      }
+    }
+  }
+  return n;
+}
+const MEAT = /肉|もも|むね|ばら|ろーす|こま|ひき|ささみ|みんち|手羽/;
+function meatKey(n) {
+  const c = n[0];
+  return '鶏豚牛'.includes(c) && MEAT.test(n) ? c + '肉' : null;
+}
+function matchIng(a, b) {
+  const x = canon(a),
+    y = canon(b);
+  if (!x || !y) return false;
+  if (x.includes(y) || y.includes(x)) return true;
+  const mx = meatKey(x);
+  return !!mx && mx === meatKey(y);
+}
+const PANTRY = ['塩', 'こしょう', '塩こしょう', '砂糖', 'しょうゆ', 'みりん', '酒', '料理酒', '酢', '油', 'さらだ油', 'ごま油', 'おりーぶおいる', '味噌', 'みそ', 'だし', '顆粒だし', '和風だし', '白だし', '鶏がらすーぷの素', '鶏がらすーぷ', 'こんそめ', '片栗粉', '小麦粉', '薄力粉', 'まよねーず', 'けちゃっぷ', 'そーす', 'うすたーそーす', 'おいすたーそーす', 'めんつゆ', 'ばたー', '水', 'お湯', 'ぽん酢', '豆板醤', '甜麺醤', 'はちみつ', 'ごま', '白ごま', 'いりごま', 'かつお節', 'こめ油'].map(canon);
+const PROTEIN = /鮭|さば|肉|鶏|豚|牛|卵|豆腐|えび|いか|たら|ぶり|あさり|ちーず/;
+function isPantry(name) {
+  const n = canon(name);
+  if (!n) return false;
+  if (PROTEIN.test(n) && !/すーぷ|だし|の素|ころ/.test(n)) return false;
+  return PANTRY.some(p => n === p || n.includes(p) && n.length <= p.length + 3);
+}
+const UNITS = 'g|kg|ml|mL|cc|l|個|本|枚|切れ|片|かけ|袋|パック|丁|株|束|玉|缶|合|杯|尾|房|節|cm|つ';
+const QTY_RE = new RegExp('^(大さじ|小さじ|カップ|約)?\\s*(\\d+(?:\\.\\d+)?(?:/\\d+)?)\\s*(' + UNITS + ')?');
+function parseQty(amount) {
+  const a = z2h(amount || '').replace(/\s/g, '');
+  const m = a.match(QTY_RE);
+  if (!m) return null;
+  let pre = m[1] === '約' ? '' : m[1] || '';
+  let v = m[2];
+  let num = v.includes('/') ? +v.split('/')[0] / +v.split('/')[1] : +v;
+  const rest = a.slice(m[0].length);
+  if (rest && !/^[〜~～\-]?[\d.]*$|^(程度|くらい|ほど|強|弱)$/.test(rest)) return null;
+  let unit = m[3] || '';
+  if (unit === 'mL') unit = 'ml';
+  if (unit === 'cc') unit = 'ml';
+  if (unit === 'kg') {
+    num *= 1000;
+    unit = 'g';
+  }
+  return {
+    num,
+    unit: pre ? pre : unit,
+    prefix: !!pre
+  };
+}
+const fmtNum = n => {
+  const r = Math.round(n * 100) / 100;
+  return String(r);
+};
+function mergeAmounts(list) {
+  const sums = new Map();
+  const texts = [];
+  for (const a of list) {
+    if (!a) {
+      continue;
+    }
+    const q = parseQty(a);
+    if (q) {
+      const k = q.unit;
+      const cur = sums.get(k) || {
+        num: 0,
+        prefix: q.prefix
+      };
+      cur.num += q.num;
+      sums.set(k, cur);
+    } else if (!texts.includes(a.trim())) texts.push(a.trim());
+  }
+  const parts = [...sums.entries()].map(([u, v]) => v.prefix ? `${u}${fmtNum(v.num)}` : `${fmtNum(v.num)}${u}`);
+  return [...parts, ...texts].join(' ＋ ');
+}
+const AMT_START = /(大さじ|小さじ|カップ|約)?\s*[0-9]|適量|少々|ひとつまみ|お好み|適宜|ひとかけ|少量|1つまみ|ひとつかみ/;
+function parseIngLine(line) {
+  let s = z2h(line).replace(/^[\s・●○◯◎★☆▪◆◇■□✓✔︎\-\*•＊]+/, '').trim();
+  if (!s) return null;
+  s = s.replace(/[…‥]+|\.{2,}|・{2,}|-{2,}|ー{3,}/g, ' ');
+  const m = s.match(AMT_START);
+  if (m && m.index > 0) {
+    const name = s.slice(0, m.index).replace(/[\s　:：、,]+$/, '').trim();
+    const amount = s.slice(m.index).trim();
+    if (name) return {
+      name,
+      amount
+    };
+  }
+  const sp = s.split(/[\s　:：]+/);
+  if (sp.length > 1) return {
+    name: sp[0],
+    amount: sp.slice(1).join(' ')
+  };
+  return {
+    name: s,
+    amount: ''
+  };
+}
+const KCAL = [[['鶏もも'], 200, 250], [['鶏むね'], 120, 250], [['ささみ'], 105, 50], [['手羽'], 190, 60], [['豚ばら'], 380, 100], [['豚ろーす'], 250, 100], [['豚こま', '豚肉', '豚切り落とし'], 230, 100], [['ひき肉', 'みんち'], 230, 100], [['牛'], 290, 100], [['鮭'], 135, 80], [['さば'], 210, 90], [['ぶり'], 250, 90], [['えび'], 85, 20], [['つな'], 70, 70], [['ういんなー'], 320, 20], [['べーこん'], 400, 17], [['はむ'], 210, 10], [['卵'], 150, 55], [['豆腐'], 65, 300], [['厚揚げ'], 150, 150], [['油揚げ'], 380, 30], [['納豆'], 190, 45], [['ごはん', 'ご飯'], 156, 150], [['米'], 356, 150], [['ぱすた', 'すぱげってぃ'], 350, 100], [['うどん'], 95, 200], [['そば'], 130, 170], [['中華麺'], 200, 150], [['食ぱん', 'パン'], 260, 60], [['じゃがいも'], 76, 150], [['さつまいも'], 130, 200], [['かぼちゃ'], 80, 150], [['玉ねぎ'], 37, 200], [['にんじん'], 37, 150], [['きゃべつ'], 23, 60], [['もやし'], 15, 200], [['ほうれん草', '小松菜'], 20, 40], [['ぶろっこりー'], 33, 15], [['しめじ', 'えのき', 'まいたけ', 'しいたけ', 'きのこ', 'えりんぎ'], 20, 100], [['なす'], 22, 80], [['とまと'], 20, 150], [['大根'], 18, 1000], [['白菜'], 14, 1000], [['ぴーまん'], 22, 35], [['長ねぎ'], 30, 100], [['きゅうり'], 14, 100], [['れたす'], 12, 300], [['ちーず'], 340, 20], [['牛乳'], 67, 200], [['生くりーむ'], 400, 200], [['ばたー'], 745, 10], [['油', 'おいる'], 900, 13], [['砂糖'], 384, 9], [['しょうゆ'], 71, 18], [['みりん'], 241, 18], [['酒'], 107, 15], [['味噌', 'みそ'], 192, 18], [['まよねーず'], 700, 12], [['けちゃっぷ'], 120, 15], [['小麦粉', '薄力粉'], 368, 9], [['片栗粉'], 330, 9], [['ごま'], 600, 9], [['はちみつ'], 300, 21], [['めんつゆ'], 100, 18], [['ぽん酢'], 60, 18]].map(([k, per100, piece]) => ({
+  k: k.map(canon),
+  per100,
+  piece
+}));
+function estimateKcal(ings, servings) {
+  let total = 0,
+    hits = 0;
+  for (const i of ings) {
+    const n = canon(i.name);
+    const e = KCAL.find(x => x.k.some(k => n.includes(k)));
+    if (!e) continue;
+    const q = parseQty(i.amount);
+    let g = null;
+    if (q) {
+      if (q.unit === 'g' || q.unit === 'ml') g = q.num;else if (q.unit === '大さじ') g = q.num * e.piece;else if (q.unit === '小さじ') g = q.num * e.piece / 3;else if (q.unit === 'カップ') g = q.num * 200;else if (q.unit === '合') g = q.num * 150;else g = q.num * e.piece;
+    } else if (/適量|少々|ひとつまみ|お好み/.test(i.amount || '')) g = e.per100 > 500 ? 3 : 0;else g = e.piece;
+    total += e.per100 * (g || 0) / 100;
+    hits++;
+  }
+  if (!hits) return null;
+  return Math.round(total / Math.max(1, servings || 1) / 10) * 10;
+}
+const EMOJI = /[\p{Extended_Pictographic}️‍]/gu;
+const STEP_NUM = /^\s*(?:STEP\s*\d+[\s.:：)）]*|手順\s*\d+[\s.:：)）]*|\(?\d{1,2}[.)）．、:：]\s*|[①-⑳⑴-⒇❶-❿➀-➉]\s*)/i;
+function parseCaption(text, categories) {
+  const raw = text || '';
+  const res = {
+    name: '',
+    ingredients: [],
+    steps: [],
+    kcal: null,
+    kcalEstimated: false,
+    url: '',
+    cats: [],
+    servings: 1
+  };
+  const url = raw.match(/https?:\/\/(?:www\.)?instagram\.com\/[^\s]+/);
+  if (url) res.url = url[0];
+  const tags = [...raw.matchAll(/#([^\s#]+)/g)].map(m => m[1]);
+  res.cats = categories.filter(c => tags.some(t => kata2hira(t).includes(kata2hira(c)) || kata2hira(c).includes(kata2hira(t))));
+  const kc = z2h(raw).match(/(\d{2,4})\s*(?:kcal|ｋｃａｌ|キロカロリー)/i) || z2h(raw).match(/カロリー[^\d\n]{0,8}(\d{2,4})/);
+  if (kc) res.kcal = +kc[1];
+  const sv = z2h(raw).match(/(\d+)\s*人(?:分|前)/);
+  if (sv) res.servings = +sv[1];
+  const lines = raw.split(/\r?\n/).map(l => l.replace(EMOJI, '').replace(/#[^\s#]+/g, '').trim()).filter(Boolean);
+  let mode = null,
+    sawHeader = false;
+  for (const line of lines) {
+    const L = z2h(line);
+    const plain = L.replace(/[【】\[\]<>＜＞《》〈〉『』「」■□◆◇▼▽☆★=＝~〜:：\s]/g, '');
+    if (plain.length <= 16 && /^(材料|ingredients|用意するもの|食材)/i.test(plain)) {
+      mode = 'ing';
+      sawHeader = true;
+      continue;
+    }
+    if (plain.length <= 16 && /^(作り方|つくり方|作りかた|手順|レシピ$|howto|作る手順)/i.test(plain)) {
+      mode = 'step';
+      sawHeader = true;
+      continue;
+    }
+    if (plain.length <= 16 && /^(ポイント|コツ|memo|メモ|保存|point|tips|おすすめ|ひとこと)/i.test(plain)) {
+      mode = 'other';
+      continue;
+    }
+    if (!res.name && !mode && L.length <= 30 && !STEP_NUM.test(L) && !/(大さじ|小さじ|\d+\s*(g|ml|cc|個|本|枚|切れ)|適量|少々)/.test(L)) {
+      res.name = L.replace(/[【】\[\]「」『』]/g, '').replace(/(の)?(作り方|レシピ)$/, '').trim();
+      continue;
+    }
+    if (mode === 'ing') {
+      if (/^[\(（【\[＜<]?\s*[A-ZＡ-Ｚa-zａ-ｚ]\s*[\)）】\]＞>]?$/.test(L)) continue;
+      if (/(人分|人前)/.test(L) && L.length < 14) continue;
+      const p = parseIngLine(L);
+      if (p) res.ingredients.push(p);
+      continue;
+    }
+    if (mode === 'step') {
+      if (STEP_NUM.test(L) || !res.steps.length) res.steps.push(L.replace(STEP_NUM, '').trim());else res.steps[res.steps.length - 1] += ' ' + L;
+      continue;
+    }
+    if (!sawHeader) {
+      if (STEP_NUM.test(L)) res.steps.push(L.replace(STEP_NUM, '').trim());else if (/^[・●○◯◎★☆\-•]/.test(L) || L.length <= 26 && AMT_START.test(L) && /(大さじ|小さじ|\d+\s*(g|ml|cc|個|本|枚|切れ|片|袋|パック)|適量|少々)/.test(L)) {
+        const p = parseIngLine(L);
+        if (p) res.ingredients.push(p);
+      }
+    }
+  }
+  res.steps = res.steps.filter(Boolean);
+  if (res.kcal == null && res.ingredients.length) {
+    const e = estimateKcal(res.ingredients, res.servings);
+    if (e) {
+      res.kcal = e;
+      res.kcalEstimated = true;
+    }
+  }
+  return res;
+}
+const HEADER_RE = /^(材料|ingredients|用意するもの|食材|作り方|つくり方|作りかた|手順|howto|作る手順)/i;
+const stripHead = l => z2h(l).replace(/[【】\[\]<>＜＞《》〈〉『』「」■□◆◇▼▽☆★=＝~〜:：\s]/g, '');
+function parseStepsText(t) {
+  const lines = z2h(t || '').replace(/([①-⑳❶-❿➀-➉])/g, '\n$1').split(/\r?\n/).map(l => l.replace(EMOJI, '').replace(/#[^\s#]+/g, '').trim()).filter(Boolean).filter(l => !(stripHead(l).length <= 16 && HEADER_RE.test(stripHead(l))));
+  const hasNum = lines.some(l => STEP_NUM.test(l));
+  const out = [];
+  for (const l of lines) {
+    if (!hasNum || STEP_NUM.test(l) || !out.length) out.push(l.replace(STEP_NUM, '').trim());else out[out.length - 1] += (/[。.!！]$/.test(out[out.length - 1]) ? '' : ' ') + l;
+  }
+  return out.filter(Boolean);
+}
+function parseIngText(t) {
+  return z2h(t || '').split(/\r?\n|\s[\/／]\s/).map(l => l.replace(EMOJI, '').trim()).filter(Boolean).filter(l => {
+    const h = stripHead(l);
+    if (h.length <= 16 && HEADER_RE.test(h)) return false;
+    if (/(人分|人前)/.test(l) && l.length < 14) return false;
+    if (/^[\(（【\[＜<]?\s*[A-ZＡ-Ｚa-zａ-ｚ]\s*[\)）】\]＞>]?$/.test(l)) return false;
+    return true;
+  }).map(parseIngLine).filter(Boolean);
+}
+function compressImage(file, max = 800) {
+  return new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onerror = () => rej(fr.error);
+    fr.onload = () => {
+      const img = new Image();
+      img.onerror = () => rej(new Error('画像を読み込めませんでした'));
+      img.onload = () => {
+        const s = Math.min(1, max / Math.max(img.width, img.height));
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.width * s);
+        c.height = Math.round(img.height * s);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        res(c.toDataURL('image/jpeg', .78));
+      };
+      img.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+const I = s => s.split('|').map(x => {
+  const [n, a] = x.split(':');
+  return {
+    name: n,
+    amount: a || ''
+  };
+});
+const GENERIC = [{
+  id: 'g1',
+  name: '肉じゃが',
+  kcal: 420,
+  categories: ['主菜'],
+  ingredients: I('豚こま切れ肉:150g|じゃがいも:3個|玉ねぎ:1個|にんじん:1本|しょうゆ:大さじ2|砂糖:大さじ1.5|みりん:大さじ2'),
+  steps: ['材料を食べやすく切る。', '鍋で肉を炒め、野菜を加えてさらに炒める。', '水200mlと調味料を入れ、落としぶたをして15分煮る。']
+}, {
+  id: 'g2',
+  name: '親子丼',
+  kcal: 650,
+  categories: ['主菜', '10分レシピ'],
+  ingredients: I('鶏もも肉:200g|玉ねぎ:1/2個|卵:3個|ごはん:2杯|めんつゆ:大さじ4'),
+  steps: ['鶏肉はひと口大、玉ねぎは薄切りにする。', 'めんつゆと水100mlで鶏肉と玉ねぎを煮る。', '溶き卵を回し入れ、半熟でごはんにのせる。']
+}, {
+  id: 'g3',
+  name: '豚の生姜焼き',
+  kcal: 480,
+  categories: ['主菜', 'お弁当'],
+  ingredients: I('豚ロース薄切り:250g|玉ねぎ:1/2個|しょうが:1かけ|しょうゆ:大さじ2|みりん:大さじ2|酒:大さじ1|キャベツ:2枚'),
+  steps: ['しょうがをすりおろし、調味料と合わせる。', '豚肉と玉ねぎを焼き、たれを絡める。', '千切りキャベツを添える。']
+}, {
+  id: 'g4',
+  name: '鮭のホイル焼き',
+  kcal: 260,
+  categories: ['主菜', 'ダイエット'],
+  ingredients: I('鮭:2切れ|しめじ:1/2袋|玉ねぎ:1/2個|バター:10g|しょうゆ:小さじ2'),
+  steps: ['ホイルに玉ねぎ、鮭、しめじをのせる。', 'バターをのせて包み、フライパンで蓋をして12分蒸し焼き。', 'しょうゆをかける。']
+}, {
+  id: 'g5',
+  name: '麻婆豆腐',
+  kcal: 380,
+  categories: ['主菜'],
+  ingredients: I('豆腐:1丁|ひき肉:150g|長ねぎ:1/2本|にんにく:1かけ|豆板醤:小さじ1|みそ:大さじ1|片栗粉:大さじ1'),
+  steps: ['豆腐をさいの目に切る。', 'ひき肉、にんにく、豆板醤を炒め、水150mlとみそを加える。', '豆腐を煮て、水溶き片栗粉でとろみをつける。']
+}, {
+  id: 'g6',
+  name: 'チキンカレー',
+  kcal: 720,
+  categories: ['主菜', '作り置き'],
+  ingredients: I('鶏もも肉:250g|玉ねぎ:2個|にんじん:1本|じゃがいも:2個|カレールウ:1/2箱|ごはん:2杯'),
+  steps: ['具材を切って炒める。', '水を加えて15分煮る。', '火を止めてルウを溶かし、5分煮込む。']
+}, {
+  id: 'g7',
+  name: '野菜炒め',
+  kcal: 300,
+  categories: ['主菜', '10分レシピ'],
+  ingredients: I('豚こま切れ肉:120g|キャベツ:1/4個|もやし:1袋|にんじん:1/3本|ピーマン:2個|鶏がらスープの素:小さじ1|塩こしょう:少々'),
+  steps: ['野菜を切る。', '強火で肉、かたい野菜の順に炒める。', '調味して手早く仕上げる。']
+}, {
+  id: 'g8',
+  name: 'ハンバーグ',
+  kcal: 520,
+  categories: ['主菜', 'お弁当'],
+  ingredients: I('ひき肉:300g|玉ねぎ:1/2個|卵:1個|パン粉:大さじ4|牛乳:大さじ3|ケチャップ:大さじ3|ソース:大さじ2'),
+  steps: ['みじん切りの玉ねぎを炒めて冷ます。', '材料をこねて成形する。', '両面を焼いて蓋をし8分蒸し焼き、ソースを煮詰める。']
+}, {
+  id: 'g9',
+  name: '鶏の照り焼き',
+  kcal: 430,
+  categories: ['主菜', 'お弁当'],
+  ingredients: I('鶏もも肉:300g|しょうゆ:大さじ2|みりん:大さじ2|砂糖:大さじ1|酒:大さじ1'),
+  steps: ['鶏肉の皮目から焼く。', '裏返して蓋をし火を通す。', '調味料を加えて照りが出るまで煮絡める。']
+}, {
+  id: 'g10',
+  name: '豚汁',
+  kcal: 220,
+  categories: ['汁物', '作り置き'],
+  ingredients: I('豚こま切れ肉:100g|大根:5cm|にんじん:1/2本|長ねぎ:1/2本|豆腐:1/2丁|みそ:大さじ3|だし:600ml'),
+  steps: ['具材を切る。', '豚肉と野菜を炒め、だしで煮る。', '豆腐を加え、みそを溶く。']
+}, {
+  id: 'g11',
+  name: 'きのこの和風パスタ',
+  kcal: 520,
+  categories: ['主菜', '10分レシピ'],
+  ingredients: I('パスタ:200g|しめじ:1袋|ベーコン:2枚|にんにく:1かけ|しょうゆ:大さじ1|バター:10g'),
+  steps: ['パスタをゆでる。', 'にんにく、ベーコン、きのこを炒める。', 'パスタと調味料を和える。']
+}, {
+  id: 'g12',
+  name: 'さばの味噌煮',
+  kcal: 330,
+  categories: ['主菜'],
+  ingredients: I('さば:2切れ|しょうが:1かけ|みそ:大さじ2|砂糖:大さじ1|酒:大さじ2|みりん:大さじ1'),
+  steps: ['さばに熱湯をかけて臭みを取る。', '煮汁とさばを入れ、落としぶたで10分煮る。', 'みそを溶いて煮詰める。']
+}, {
+  id: 'g13',
+  name: 'トマトと卵の炒め物',
+  kcal: 250,
+  categories: ['副菜', '10分レシピ'],
+  ingredients: I('卵:3個|トマト:2個|塩こしょう:少々|ごま油:大さじ1'),
+  steps: ['卵を半熟に炒めて取り出す。', 'トマトを炒めて卵を戻す。', '塩こしょうで味を調える。']
+}, {
+  id: 'g14',
+  name: 'ほうれん草のおひたし',
+  kcal: 40,
+  categories: ['副菜', 'ダイエット', '作り置き'],
+  ingredients: I('ほうれん草:1束|しょうゆ:小さじ2|かつお節:適量'),
+  steps: ['ほうれん草をゆでて水にとる。', '絞って切り、しょうゆとかつお節をかける。']
+}, {
+  id: 'g15',
+  name: 'チャーハン',
+  kcal: 580,
+  categories: ['主菜', '10分レシピ'],
+  ingredients: I('ごはん:2杯|卵:2個|長ねぎ:1/2本|ハム:4枚|鶏がらスープの素:小さじ1|しょうゆ:小さじ1'),
+  steps: ['具材を刻む。', '卵を炒めてごはんを加え、ほぐす。', '具材と調味料で仕上げる。']
+}, {
+  id: 'g16',
+  name: '鶏むねのさっぱり煮',
+  kcal: 280,
+  categories: ['主菜', 'ダイエット'],
+  ingredients: I('鶏むね肉:300g|ブロッコリー:1/2株|ぽん酢:大さじ3|酢:大さじ1|砂糖:小さじ2'),
+  steps: ['鶏むね肉をそぎ切りにする。', '煮汁で鶏肉を煮る。', 'ゆでたブロッコリーと合わせる。']
+}, {
+  id: 'g17',
+  name: 'なすの揚げびたし風',
+  kcal: 150,
+  categories: ['副菜', '作り置き'],
+  ingredients: I('なす:3本|めんつゆ:大さじ3|しょうが:1かけ|ごま油:大さじ2'),
+  steps: ['なすを切って油で焼く。', 'めんつゆとしょうがの漬け汁に浸す。']
+}].map(g => ({
+  ...g,
+  generic: true
+}));
+const DEFAULT_CATS = ['主菜', '副菜', '汁物', '10分レシピ', 'ダイエット', 'お弁当', '作り置き'];
+const SAMPLES = [{
+  name: '鶏むねのレンジ蒸し ねぎ塩だれ',
+  kcal: 290,
+  categories: ['主菜', 'ダイエット', '10分レシピ'],
+  instaUrl: '',
+  ingredients: I('鶏むね肉:1枚(300g)|長ねぎ:1/2本|ごま油:大さじ1|鶏がらスープの素:小さじ1|塩こしょう:少々|酒:大さじ1'),
+  steps: ['鶏むね肉にフォークで穴をあけ、酒をふる。', 'ラップをして600Wで3分、裏返して2分加熱し、そのまま5分おく。', '刻んだ長ねぎとごま油、鶏がらスープの素を混ぜてかける。']
+}, {
+  name: 'ツナとキャベツの塩昆布和え',
+  kcal: 120,
+  categories: ['副菜', '10分レシピ', '作り置き'],
+  instaUrl: '',
+  ingredients: I('キャベツ:1/4個|ツナ缶:1缶|塩昆布:大さじ2|ごま油:小さじ2'),
+  steps: ['キャベツをざく切りにして塩もみし、水気を絞る。', 'ツナ、塩昆布、ごま油で和える。']
+}, {
+  name: '豚こまとじゃがいものカレー炒め',
+  kcal: 410,
+  categories: ['主菜', 'お弁当'],
+  instaUrl: '',
+  ingredients: I('豚こま切れ肉:200g|じゃがいも:2個|玉ねぎ:1/2個|カレー粉:小さじ2|しょうゆ:小さじ2|オリーブオイル:大さじ1'),
+  steps: ['じゃがいもは細切りにして水にさらす。', '豚肉を炒め、じゃがいもと玉ねぎを加えて炒める。', 'カレー粉としょうゆで味をつける。']
+}].map((s, i) => ({
+  ...s,
+  id: uid(),
+  photo: '',
+  sample: true,
+  fav: i === 0,
+  createdAt: Date.now() - i
+}));
+const DAYS = ['月', '火', '水', '木', '金', '土', '日'];
+const shuffle = a => {
+  const b = [...a];
+  for (let i = b.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [b[i], b[j]] = [b[j], b[i]];
+  }
+  return b;
+};
+function nextMonday() {
+  const d = new Date();
+  const wd = (d.getDay() + 6) % 7;
+  const add = wd === 0 ? 0 : 7 - wd;
+  d.setDate(d.getDate() + add);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
+function scoreRecipe(r, fridge) {
+  const ings = (r.ingredients || []).filter(i => i.name && !isPantry(i.name));
+  const hit = ings.filter(i => fridge.some(f => matchIng(i.name, f)));
+  return {
+    hit: hit.length,
+    total: ings.length,
+    score: (ings.length ? hit.length / ings.length + hit.length * .15 : 0) + (r.fav && hit.length ? .2 : 0)
+  };
+}
+function planFromFridge(recipes, fridge, n) {
+  const used = new Set();
+  const days = [];
+  const mine = recipes.map(r => ({
+    r,
+    s: scoreRecipe(r, fridge)
+  })).filter(x => x.s.hit > 0).sort((a, b) => b.s.score - a.s.score);
+  const gen = GENERIC.map(r => ({
+    r,
+    s: scoreRecipe(r, fridge)
+  })).filter(x => x.s.hit > 0).sort((a, b) => b.s.score - a.s.score);
+  for (const x of mine) {
+    if (days.length >= n) break;
+    days.push({
+      source: 'mine',
+      id: x.r.id,
+      hit: x.s.hit,
+      total: x.s.total
+    });
+    used.add(x.r.id);
+  }
+  for (const x of gen) {
+    if (days.length >= n) break;
+    days.push({
+      source: 'generic',
+      id: x.r.id,
+      hit: x.s.hit,
+      total: x.s.total
+    });
+    used.add(x.r.id);
+  }
+  for (const r of shuffle(GENERIC)) {
+    if (days.length >= n) break;
+    if (used.has(r.id)) continue;
+    days.push({
+      source: 'generic',
+      id: r.id,
+      hit: 0,
+      total: scoreRecipe(r, fridge).total
+    });
+    used.add(r.id);
+  }
+  return days;
+}
+function planBalanced(recipes, catFilter, n, favBoost) {
+  let pool = catFilter ? recipes.filter(r => (r.categories || []).includes(catFilter)) : recipes;
+  pool = shuffle(pool);
+  const days = [];
+  const used = new Set();
+  let prevCat = null;
+  for (let d = 0; d < n; d++) {
+    let best = null,
+      bp = 1e9;
+    for (const r of pool) {
+      if (used.has(r.id)) continue;
+      const c = (r.categories || [])[0] || '';
+      const p = (c && c === prevCat ? 3 : 0) - (favBoost && r.fav ? 2.5 : 0) + Math.random() * 2;
+      if (p < bp) {
+        bp = p;
+        best = r;
+      }
+    }
+    if (!best) break;
+    used.add(best.id);
+    prevCat = (best.categories || [])[0] || null;
+    days.push({
+      source: 'mine',
+      id: best.id
+    });
+  }
+  const g = shuffle(catFilter ? GENERIC.filter(r => r.categories.includes(catFilter)) : GENERIC);
+  const g2 = g.length ? g : shuffle(GENERIC);
+  let k = 0;
+  while (days.length < n) {
+    days.push({
+      source: 'generic',
+      id: g2[k % g2.length].id
+    });
+    k++;
+  }
+  return days;
+}
+function spread(list, off) {
+  const out = [];
+  let k = 0;
+  for (let i = 0; i < 7; i++) {
+    if (off.includes(i)) out.push({
+      off: true
+    });else out.push(list[k++] || {
+      off: true
+    });
+  }
+  return out;
+}
+const findRecipe = (d, recipes) => !d || d.off ? null : d.source === 'mine' ? recipes.find(x => x.id === d.id) : GENERIC.find(x => x.id === d.id);
+function buildShopping(plan, recipes, prevItems) {
+  const byName = new Map();
+  const fridge = plan.mode === 'fridge' ? plan.fridge || [] : [];
+  plan.days.forEach((d, idx) => {
+    const r = findRecipe(d, recipes);
+    if (!r) return;
+    for (const i of r.ingredients || []) {
+      if (!i.name) continue;
+      if (fridge.some(f => matchIng(i.name, f))) continue;
+      const key = canon(i.name);
+      if (!byName.has(key)) byName.set(key, {
+        name: i.name.replace(/[（(][^）)]*[）)]/g, '').trim() || i.name,
+        amounts: [],
+        from: new Set(),
+        pantry: isPantry(i.name)
+      });
+      const e = byName.get(key);
+      e.amounts.push(i.amount);
+      e.from.add(DAYS[idx]);
+    }
+  });
+  const prevChecked = new Map((prevItems || []).filter(i => !i.manual).map(i => [canon(i.name), i.checked]));
+  const items = [...byName.entries()].map(([k, e]) => ({
+    id: uid(),
+    name: e.name,
+    amount: mergeAmounts(e.amounts),
+    from: [...e.from].join('・'),
+    group: e.pantry ? 'pantry' : 'food',
+    checked: prevChecked.get(k) || false
+  }));
+  items.sort((a, b) => a.group === b.group ? 0 : a.group === 'food' ? -1 : 1);
+  return [...items, ...(prevItems || []).filter(i => i.manual)];
+}
+function Chip({
+  active,
+  children,
+  onClick,
+  small
+}) {
+  return React.createElement("button", {
+    type: "button",
+    onClick: onClick,
+    className: `shrink-0 rounded-full border ${small ? 'px-2.5 py-0.5 text-xs' : 'px-3.5 py-1.5 text-sm'} font-medium transition-colors ${active ? 'bg-primary text-pink border-primary' : 'bg-surface text-ink border-line hover:border-primary/60'}`
+  }, children);
+}
+function Sheet({
+  open,
+  onClose,
+  title,
+  children,
+  footer
+}) {
+  if (!open) return null;
+  return React.createElement("div", {
+    className: "fixed inset-0 z-50 flex items-end sm:items-center justify-center",
+    role: "dialog",
+    "aria-modal": "true",
+    "aria-label": title
+  }, React.createElement("div", {
+    className: "absolute inset-0 bg-ink/40",
+    onClick: onClose
+  }), React.createElement("div", {
+    className: "sheet-enter relative w-full max-w-md max-h-[92%] flex flex-col bg-bg rounded-t-3xl sm:rounded-3xl shadow-2xl",
+    style: {
+      paddingBottom: 'env(safe-area-inset-bottom,0px)'
+    }
+  }, React.createElement("div", {
+    className: "gutter flex items-center justify-between pt-4 pb-2"
+  }, React.createElement("h2", {
+    className: "font-display text-lg font-bold"
+  }, title), React.createElement("button", {
+    onClick: onClose,
+    className: "p-2 -mr-2 rounded-full hover:bg-sunk",
+    "aria-label": "\u9589\u3058\u308B"
+  }, React.createElement(Icon, {
+    name: "X",
+    size: 20
+  }))), React.createElement("div", {
+    className: "gutter overflow-y-auto pb-4 min-h-0"
+  }, children), footer && React.createElement("div", {
+    className: "gutter py-3 border-t border-line bg-surface rounded-b-none sm:rounded-b-3xl"
+  }, footer)));
+}
+function Confirm({
+  state,
+  onCancel
+}) {
+  if (!state) return null;
+  return React.createElement(Sheet, {
+    open: true,
+    title: state.title,
+    onClose: onCancel,
+    footer: React.createElement("div", {
+      className: "flex gap-2"
+    }, React.createElement("button", {
+      className: "flex-1 py-3 rounded-xl border border-line bg-surface font-medium",
+      onClick: onCancel
+    }, "\u3084\u3081\u308B"), React.createElement("button", {
+      className: "flex-1 py-3 rounded-xl bg-danger text-pink font-bold",
+      onClick: () => {
+        state.onOk();
+        onCancel();
+      }
+    }, state.ok || '削除する'))
+  }, React.createElement("p", {
+    className: "text-muted"
+  }, state.body));
+}
+function Photo({
+  r,
+  className = '',
+  showTag = false
+}) {
+  const src = r ? r.photo || dishIllustration(r) : '';
+  return React.createElement("div", {
+    className: `relative overflow-hidden ${className}`
+  }, src ? React.createElement("img", {
+    src: src,
+    alt: r && r.name ? `${r.name}の${r.photo ? '写真' : 'イラスト'}` : '',
+    className: "absolute inset-0 w-full h-full object-cover"
+  }) : React.createElement("div", {
+    className: "photo-ph absolute inset-0 flex items-center justify-center text-muted"
+  }, React.createElement(Icon, {
+    name: "ChefHat",
+    size: 24,
+    strokeWidth: 1.5
+  })), showTag && r && !r.photo && React.createElement("span", {
+    className: "absolute bottom-2 right-2 rounded-full bg-surface/90 text-muted px-2 py-0.5 text-[10px] font-bold"
+  }, "\u30A4\u30E9\u30B9\u30C8"));
+}
+function FavButton({
+  on,
+  onClick,
+  className = '',
+  size = 18
+}) {
+  return React.createElement("button", {
+    type: "button",
+    onClick: e => {
+      e.stopPropagation();
+      onClick();
+    },
+    "aria-pressed": !!on,
+    "aria-label": on ? 'お気に入りから外す' : 'お気に入りに追加',
+    className: `rounded-full flex items-center justify-center transition-colors ${on ? 'text-danger' : 'text-muted hover:text-danger'} ${className}`
+  }, React.createElement(Icon, {
+    name: "Heart",
+    size: size,
+    fill: on ? 'currentColor' : 'none'
+  }));
+}
+const btnPrimary = 'inline-flex items-center justify-center gap-2 rounded-xl bg-primary text-pink font-bold px-4 py-3 active:scale-[.98] transition-transform disabled:opacity-50';
+const btnGhost = 'inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-surface text-ink font-medium px-4 py-2.5 hover:border-primary/60';
+const field = 'w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-ink placeholder:text-muted/70 focus:outline-none focus:border-primary';
+function RecipeList({
+  recipes,
+  categories,
+  onOpen,
+  goNew,
+  onFav
+}) {
+  const [q, setQ] = useState('');
+  const [cat, setCat] = useState('');
+  const filtered = useMemo(() => {
+    const nq = canon(q);
+    return recipes.filter(r => (!cat || (cat === '__fav' ? r.fav : (r.categories || []).includes(cat))) && (!nq || canon(r.name).includes(nq) || (r.ingredients || []).some(i => canon(i.name).includes(nq)))).sort((a, b) => (b.fav ? 1 : 0) - (a.fav ? 1 : 0) || (b.createdAt || 0) - (a.createdAt || 0));
+  }, [recipes, q, cat]);
+  const counts = useMemo(() => {
+    const m = {};
+    recipes.forEach(r => (r.categories || []).forEach(c => m[c] = (m[c] || 0) + 1));
+    return m;
+  }, [recipes]);
+  const favN = recipes.filter(r => r.fav).length;
+  return React.createElement("div", {
+    className: "flex flex-col gap-4"
+  }, React.createElement("label", {
+    className: "relative block"
+  }, React.createElement("span", {
+    className: "absolute left-3.5 top-1/2 -translate-y-1/2 text-muted"
+  }, React.createElement(Icon, {
+    name: "Search",
+    size: 18
+  })), React.createElement("input", {
+    id: "search",
+    value: q,
+    onChange: e => setQ(e.target.value),
+    placeholder: "\u6599\u7406\u540D\u30FB\u6750\u6599\u3067\u63A2\u3059\uFF08\u4F8B\uFF1A\u9D8F\u3080\u306D\uFF09",
+    className: field + ' pl-10'
+  })), React.createElement("div", {
+    className: "scrollx -mx-4 px-4 flex gap-2"
+  }, React.createElement(Chip, {
+    active: !cat,
+    onClick: () => setCat('')
+  }, "\u3059\u3079\u3066 ", React.createElement("span", {
+    className: "tnum opacity-70"
+  }, recipes.length)), React.createElement(Chip, {
+    active: cat === '__fav',
+    onClick: () => setCat(cat === '__fav' ? '' : '__fav')
+  }, React.createElement(Icon, {
+    name: "Heart",
+    size: 13,
+    fill: "currentColor",
+    className: "inline -mt-0.5 mr-1"
+  }), "\u304A\u6C17\u306B\u5165\u308A ", React.createElement("span", {
+    className: "tnum opacity-70"
+  }, favN)), categories.map(c => React.createElement(Chip, {
+    key: c,
+    active: cat === c,
+    onClick: () => setCat(cat === c ? '' : c)
+  }, c, " ", React.createElement("span", {
+    className: "tnum opacity-70"
+  }, counts[c] || 0)))), filtered.length === 0 ? React.createElement("div", {
+    className: "stamp rounded-2xl p-8 text-center text-muted flex flex-col items-center gap-3"
+  }, React.createElement(Icon, {
+    name: cat === '__fav' ? 'Heart' : 'BookOpen',
+    size: 32,
+    strokeWidth: 1.5
+  }), React.createElement("p", null, cat === '__fav' ? 'お気に入りはまだありません。レシピの♡をタップすると追加されます。' : recipes.length ? '条件に合うレシピがありません。' : 'まだレシピがありません。最初の1品を登録しましょう。'), !recipes.length && React.createElement("button", {
+    className: btnPrimary,
+    onClick: goNew
+  }, React.createElement(Icon, {
+    name: "Plus"
+  }), "\u30EC\u30B7\u30D4\u3092\u767B\u9332")) : React.createElement("ul", {
+    className: "grid grid-cols-2 gap-3"
+  }, filtered.map(r => React.createElement("li", {
+    key: r.id,
+    className: "relative"
+  }, React.createElement("button", {
+    onClick: () => onOpen(r),
+    className: "ticket w-full text-left rounded-2xl overflow-hidden flex flex-col h-full hover:border-primary/60 transition-colors"
+  }, React.createElement("div", {
+    className: "relative"
+  }, React.createElement(Photo, {
+    r: r,
+    className: "w-full aspect-[4/3]"
+  }), r.kcal ? React.createElement("span", {
+    className: "absolute bottom-2 left-2 rounded-full bg-surface/95 px-2 py-0.5 text-xs font-bold tnum flex items-center gap-1"
+  }, React.createElement(Icon, {
+    name: "Flame",
+    size: 12,
+    className: "text-honey"
+  }), r.kcal, React.createElement("span", {
+    className: "font-normal"
+  }, "kcal")) : null, r.sample && React.createElement("span", {
+    className: "absolute top-2 left-2 rounded-full bg-honey text-pink px-2 py-0.5 text-[10px] font-bold label"
+  }, "\u898B\u672C"), r.instaUrl && React.createElement("span", {
+    className: "absolute bottom-2 right-2 rounded-full bg-surface/95 p-1"
+  }, React.createElement(Icon, {
+    name: "Instagram",
+    size: 13
+  }))), React.createElement("div", {
+    className: "p-3 flex flex-col gap-1.5 min-w-0 flex-1"
+  }, React.createElement("h3", {
+    className: "font-display font-bold leading-snug text-[15px] line-clamp-2"
+  }, r.name), React.createElement("div", {
+    className: "flex flex-wrap gap-1 mt-auto"
+  }, (r.categories || []).slice(0, 2).map(c => React.createElement("span", {
+    key: c,
+    className: "text-[11px] text-muted bg-sunk rounded px-1.5"
+  }, c))))), React.createElement(FavButton, {
+    on: r.fav,
+    onClick: () => onFav(r),
+    className: "absolute top-2 right-2 w-8 h-8 bg-surface/95 shadow-sm",
+    size: 16
+  })))));
+}
+function RecipeDetail({
+  recipe,
+  onClose,
+  onEdit,
+  onDelete,
+  onSaveGeneric,
+  onFav
+}) {
+  if (!recipe) return null;
+  const r = recipe;
+  return React.createElement(Sheet, {
+    open: true,
+    title: r.generic ? '定番レシピ' : 'レシピ',
+    onClose: onClose,
+    footer: r.generic ? React.createElement("button", {
+      className: btnPrimary + ' w-full',
+      onClick: () => onSaveGeneric(r)
+    }, React.createElement(Icon, {
+      name: "BookmarkPlus"
+    }), "\u30DE\u30A4\u30EC\u30B7\u30D4\u306B\u4FDD\u5B58") : React.createElement("div", {
+      className: "flex gap-2"
+    }, React.createElement("button", {
+      className: btnGhost + ' flex-1',
+      onClick: () => onDelete(r)
+    }, React.createElement(Icon, {
+      name: "Trash2",
+      size: 16
+    }), "\u524A\u9664"), React.createElement("button", {
+      className: btnPrimary + ' flex-[2]',
+      onClick: () => onEdit(r)
+    }, React.createElement(Icon, {
+      name: "Pencil",
+      size: 16
+    }), "\u7DE8\u96C6\u3059\u308B"))
+  }, React.createElement("div", {
+    className: "flex flex-col gap-4"
+  }, React.createElement(Photo, {
+    r: r,
+    className: "w-full aspect-[16/10] rounded-2xl",
+    showTag: true
+  }), React.createElement("div", null, React.createElement("div", {
+    className: "flex items-start justify-between gap-3"
+  }, React.createElement("h3", {
+    className: "font-display text-2xl font-bold leading-tight min-w-0"
+  }, r.name), !r.generic && React.createElement(FavButton, {
+    on: r.fav,
+    onClick: () => onFav(r),
+    className: "w-10 h-10 border border-line bg-surface shrink-0",
+    size: 20
+  })), React.createElement("div", {
+    className: "flex flex-wrap items-center gap-2 mt-2"
+  }, r.kcal ? React.createElement("span", {
+    className: "inline-flex items-center gap-1 rounded-full bg-honey/15 text-ink px-2.5 py-0.5 text-sm font-bold tnum"
+  }, React.createElement(Icon, {
+    name: "Flame",
+    size: 14,
+    className: "text-honey"
+  }), r.kcal, " kcal", React.createElement("span", {
+    className: "font-normal text-muted text-xs"
+  }, "/1\u4EBA\u5206\u76EE\u5B89")) : null, (r.categories || []).map(c => React.createElement("span", {
+    key: c,
+    className: "text-xs bg-sunk rounded-full px-2 py-0.5"
+  }, c)))), r.instaUrl && React.createElement("a", {
+    href: r.instaUrl,
+    target: "_blank",
+    rel: "noopener noreferrer",
+    className: btnGhost + ' justify-between'
+  }, React.createElement("span", {
+    className: "flex items-center gap-2"
+  }, React.createElement(Icon, {
+    name: "Instagram"
+  }), "Instagram\u306E\u6295\u7A3F\u3092\u958B\u304F"), React.createElement(Icon, {
+    name: "ExternalLink",
+    size: 16
+  })), React.createElement("section", null, React.createElement("h4", {
+    className: "font-display font-bold mb-2 flex items-center gap-2"
+  }, React.createElement(Icon, {
+    name: "ShoppingBasket",
+    size: 18,
+    className: "text-primary"
+  }), "\u6750\u6599"), React.createElement("ul", {
+    className: "ticket rounded-2xl divide-y divide-line/70"
+  }, (r.ingredients || []).map((i, k) => React.createElement("li", {
+    key: k,
+    className: "flex justify-between gap-3 px-4 py-2"
+  }, React.createElement("span", {
+    className: "min-w-0"
+  }, i.name), React.createElement("span", {
+    className: "text-muted tnum shrink-0"
+  }, i.amount))), !(r.ingredients || []).length && React.createElement("li", {
+    className: "px-4 py-3 text-muted"
+  }, "\u672A\u767B\u9332"))), React.createElement("section", null, React.createElement("h4", {
+    className: "font-display font-bold mb-2 flex items-center gap-2"
+  }, React.createElement(Icon, {
+    name: "CookingPot",
+    size: 18,
+    className: "text-primary"
+  }), "\u4F5C\u308A\u65B9"), React.createElement("ol", {
+    className: "flex flex-col gap-2"
+  }, (r.steps || []).map((s, k) => React.createElement("li", {
+    key: k,
+    className: "flex gap-3"
+  }, React.createElement("span", {
+    className: "shrink-0 w-7 h-7 rounded-full bg-primary text-pink text-sm font-bold flex items-center justify-center tnum"
+  }, k + 1), React.createElement("p", {
+    className: "pt-0.5 min-w-0"
+  }, s))), !(r.steps || []).length && React.createElement("li", {
+    className: "text-muted"
+  }, "\u672A\u767B\u9332")))));
+}
+const emptyForm = () => ({
+  id: null,
+  name: '',
+  photo: '',
+  instaUrl: '',
+  ingredients: [{
+    name: '',
+    amount: ''
+  }, {
+    name: '',
+    amount: ''
+  }, {
+    name: '',
+    amount: ''
+  }],
+  steps: [''],
+  kcal: '',
+  kcalEstimated: false,
+  categories: []
+});
+function RecipeForm({
+  initial,
+  categories,
+  onAddCategory,
+  onSave,
+  onCancel,
+  toast
+}) {
+  const [f, setF] = useState(initial || emptyForm());
+  const [caption, setCaption] = useState('');
+  const [newCat, setNewCat] = useState('');
+  const [busy, setBusy] = useState(false);
+  const fileRef = useRef();
+  useEffect(() => {
+    setF(initial || emptyForm());
+    setCaption('');
+  }, [initial]);
+  const set = (k, v) => setF(p => ({
+    ...p,
+    [k]: v
+  }));
+  const setIng = (i, k, v) => setF(p => {
+    const a = [...p.ingredients];
+    a[i] = {
+      ...a[i],
+      [k]: v
+    };
+    return {
+      ...p,
+      ingredients: a
+    };
+  });
+  const setStep = (i, v) => setF(p => {
+    const a = [...p.steps];
+    a[i] = v;
+    return {
+      ...p,
+      steps: a
+    };
+  });
+  async function onPhoto(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    try {
+      setBusy(true);
+      set('photo', await compressImage(file));
+    } catch (err) {
+      toast('画像を読み込めませんでした。別の画像を選んでください。');
+    } finally {
+      setBusy(false);
+      e.target.value = '';
+    }
+  }
+  function autofill() {
+    if (!caption.trim()) {
+      toast('投稿文を貼り付けてから押してください。');
+      return;
+    }
+    const p = parseCaption(caption, categories);
+    setF(prev => ({
+      ...prev,
+      name: prev.name || p.name,
+      instaUrl: prev.instaUrl || p.url,
+      ingredients: p.ingredients.length ? p.ingredients : prev.ingredients,
+      steps: p.steps.length ? p.steps : prev.steps,
+      kcal: p.kcal != null ? String(p.kcal) : prev.kcal,
+      kcalEstimated: p.kcal != null ? p.kcalEstimated : prev.kcalEstimated,
+      categories: [...new Set([...prev.categories, ...p.cats])]
+    }));
+    toast(`材料${p.ingredients.length}件・手順${p.steps.length}件を入力しました${p.kcal != null ? p.kcalEstimated ? '（カロリーは材料から推定）' : '' : ''}`);
+  }
+  function estimate() {
+    const ings = f.ingredients.filter(i => i.name.trim());
+    const e = estimateKcal(ings, 2);
+    if (e) {
+      set('kcal', String(e));
+      set('kcalEstimated', true);
+      toast('材料（2人分想定）から1人分を推定しました');
+    } else toast('推定できる材料が見つかりませんでした');
+  }
+  const [bulk, setBulk] = useState({
+    ing: false,
+    step: false
+  });
+  const [bulkText, setBulkText] = useState({
+    ing: '',
+    step: ''
+  });
+  function applyIng(text) {
+    const list = parseIngText(text);
+    if (!list.length) {
+      toast('材料を読み取れませんでした');
+      return false;
+    }
+    setF(p => {
+      const keep = p.ingredients.filter(i => i.name.trim() || i.amount.trim());
+      return {
+        ...p,
+        ingredients: [...keep, ...list]
+      };
+    });
+    toast(`材料を${list.length}件入れました`);
+    return true;
+  }
+  function applySteps(text) {
+    const list = parseStepsText(text);
+    if (!list.length) {
+      toast('作り方を読み取れませんでした');
+      return false;
+    }
+    setF(p => {
+      const keep = p.steps.filter(x => x.trim());
+      return {
+        ...p,
+        steps: [...keep, ...list]
+      };
+    });
+    toast(`手順を${list.length}件に分けて入れました`);
+    return true;
+  }
+  function onPasteIng(e, k) {
+    const t = e.clipboardData && e.clipboardData.getData('text');
+    if (!t || !/\n/.test(t.trim())) return;
+    e.preventDefault();
+    const list = parseIngText(t);
+    if (!list.length) return;
+    setF(p => {
+      const a = [...p.ingredients];
+      a.splice(k, 1, ...list);
+      return {
+        ...p,
+        ingredients: a.filter((i, x) => i.name.trim() || i.amount.trim() || x >= a.length - 1)
+      };
+    });
+    toast(`材料を${list.length}件に分けて入れました`);
+  }
+  function onPasteStep(e, k) {
+    const t = e.clipboardData && e.clipboardData.getData('text');
+    if (!t || !/\n|[①-⑳]/.test(t.trim())) return;
+    const list = parseStepsText(t);
+    if (list.length < 2) return;
+    e.preventDefault();
+    setF(p => {
+      const a = [...p.steps];
+      a.splice(k, 1, ...list);
+      return {
+        ...p,
+        steps: a
+      };
+    });
+    toast(`手順を${list.length}件に分けて入れました`);
+  }
+  function toggleCat(c) {
+    set('categories', f.categories.includes(c) ? f.categories.filter(x => x !== c) : [...f.categories, c]);
+  }
+  function addCat() {
+    const c = newCat.trim();
+    if (!c) return;
+    onAddCategory(c);
+    if (!f.categories.includes(c)) set('categories', [...f.categories, c]);
+    setNewCat('');
+  }
+  function submit(e) {
+    e.preventDefault();
+    if (!f.name.trim()) {
+      toast('料理名を入れてください');
+      return;
+    }
+    onSave({
+      ...f,
+      name: f.name.trim(),
+      kcal: f.kcal ? Math.round(+z2h(String(f.kcal)).replace(/[^\d.]/g, '') || 0) || null : null,
+      ingredients: f.ingredients.filter(i => i.name.trim()).map(i => ({
+        name: i.name.trim(),
+        amount: i.amount.trim()
+      })),
+      steps: f.steps.map(s => s.trim()).filter(Boolean)
+    });
+  }
+  return React.createElement("form", {
+    onSubmit: submit,
+    className: "flex flex-col gap-5"
+  }, React.createElement("section", {
+    className: "rounded-2xl border border-honey/50 bg-honey/10 p-4 flex flex-col gap-3"
+  }, React.createElement("div", {
+    className: "flex items-center gap-2 font-display font-bold"
+  }, React.createElement(Icon, {
+    name: "Sparkles",
+    size: 18,
+    className: "text-honey"
+  }), "\u30A4\u30F3\u30B9\u30BF\u6295\u7A3F\u6587\u304B\u3089\u81EA\u52D5\u5165\u529B"), React.createElement("textarea", {
+    id: "caption",
+    rows: 4,
+    value: caption,
+    onChange: e => setCaption(e.target.value),
+    className: field + ' text-sm',
+    placeholder: '投稿のキャプションをまるごと貼り付け\n例）【材料】鶏むね肉 1枚 / 塩 少々…【作り方】①…'
+  }), React.createElement("button", {
+    type: "button",
+    onClick: autofill,
+    className: btnPrimary
+  }, React.createElement(Icon, {
+    name: "Wand2",
+    size: 18
+  }), "\u81EA\u52D5\u5165\u529B")), React.createElement("div", {
+    className: "flex flex-col gap-1.5"
+  }, React.createElement("label", {
+    htmlFor: "name",
+    className: "text-sm font-bold"
+  }, "\u6599\u7406\u540D"), React.createElement("input", {
+    id: "name",
+    value: f.name,
+    onChange: e => set('name', e.target.value),
+    className: field,
+    placeholder: "\u4F8B\uFF1A\u9D8F\u3080\u306D\u306E\u306D\u304E\u5869\u30EC\u30F3\u30B8\u84B8\u3057"
+  })), React.createElement("div", {
+    className: "flex flex-col gap-1.5"
+  }, React.createElement("span", {
+    className: "text-sm font-bold"
+  }, "\u5199\u771F"), React.createElement("button", {
+    type: "button",
+    onClick: () => fileRef.current && fileRef.current.click(),
+    className: "relative rounded-2xl overflow-hidden stamp"
+  }, f.photo ? React.createElement("img", {
+    src: f.photo,
+    alt: "\u30D7\u30EC\u30D3\u30E5\u30FC",
+    className: "w-full aspect-[16/10] object-cover"
+  }) : React.createElement("div", {
+    className: "aspect-[16/10] flex flex-col items-center justify-center gap-2 text-muted"
+  }, React.createElement(Icon, {
+    name: "Camera",
+    size: 30,
+    strokeWidth: 1.5
+  }), React.createElement("span", {
+    className: "text-sm"
+  }, busy ? '読み込み中…' : 'タップして写真を選ぶ'))), f.photo && React.createElement("button", {
+    type: "button",
+    className: "self-end text-sm text-danger",
+    onClick: () => set('photo', '')
+  }, "\u5199\u771F\u3092\u5916\u3059"), React.createElement("input", {
+    ref: fileRef,
+    id: "photo",
+    type: "file",
+    accept: "image/*",
+    className: "hidden",
+    onChange: onPhoto
+  })), React.createElement("div", {
+    className: "flex flex-col gap-1.5"
+  }, React.createElement("label", {
+    htmlFor: "insta",
+    className: "text-sm font-bold flex items-center gap-1.5"
+  }, React.createElement(Icon, {
+    name: "Instagram",
+    size: 16
+  }), "Instagram\u306EURL"), React.createElement("input", {
+    id: "insta",
+    type: "url",
+    inputMode: "url",
+    value: f.instaUrl,
+    onChange: e => set('instaUrl', e.target.value),
+    className: field,
+    placeholder: "https://www.instagram.com/p/..."
+  })), React.createElement("div", {
+    className: "flex flex-col gap-2"
+  }, React.createElement("div", {
+    className: "flex items-center justify-between gap-2"
+  }, React.createElement("span", {
+    className: "text-sm font-bold"
+  }, "\u6750\u6599"), React.createElement("button", {
+    type: "button",
+    onClick: () => setBulk(b => ({
+      ...b,
+      ing: !b.ing
+    })),
+    className: "text-xs font-bold text-primary flex items-center gap-1"
+  }, React.createElement(Icon, {
+    name: "ClipboardPaste",
+    size: 14
+  }), "\u307E\u3068\u3081\u3066\u8CBC\u308A\u4ED8\u3051")), bulk.ing && React.createElement("div", {
+    className: "rounded-xl bg-sunk p-3 flex flex-col gap-2"
+  }, React.createElement("textarea", {
+    id: "bulk-ing",
+    rows: 5,
+    value: bulkText.ing,
+    onChange: e => setBulkText(b => ({
+      ...b,
+      ing: e.target.value
+    })),
+    className: field + ' text-sm',
+    placeholder: '材料を何行でも貼り付け\n例）\n鶏むね肉 1枚\n長ねぎ…1/2本\n・ごま油 大さじ1'
+  }), React.createElement("div", {
+    className: "flex gap-2"
+  }, React.createElement("button", {
+    type: "button",
+    className: btnGhost + ' flex-1 text-sm',
+    onClick: () => setBulk(b => ({
+      ...b,
+      ing: false
+    }))
+  }, "\u9589\u3058\u308B"), React.createElement("button", {
+    type: "button",
+    className: btnPrimary + ' flex-[2] text-sm py-2.5',
+    onClick: () => {
+      if (applyIng(bulkText.ing)) {
+        setBulkText(b => ({
+          ...b,
+          ing: ''
+        }));
+        setBulk(b => ({
+          ...b,
+          ing: false
+        }));
+      }
+    }
+  }, React.createElement(Icon, {
+    name: "ListPlus",
+    size: 16
+  }), "1\u884C\u305A\u3064\u6750\u6599\u306B\u5165\u308C\u308B"))), f.ingredients.map((i, k) => React.createElement("div", {
+    key: k,
+    className: "flex gap-2 items-center"
+  }, React.createElement("input", {
+    id: `ing-n-${k}`,
+    "aria-label": "\u6750\u6599\u540D",
+    value: i.name,
+    onChange: e => setIng(k, 'name', e.target.value),
+    onPaste: e => onPasteIng(e, k),
+    className: field + ' flex-[3] min-w-0',
+    placeholder: "\u6750\u6599\u540D"
+  }), React.createElement("input", {
+    id: `ing-a-${k}`,
+    "aria-label": "\u5206\u91CF",
+    value: i.amount,
+    onChange: e => setIng(k, 'amount', e.target.value),
+    className: field + ' flex-[2] min-w-0',
+    placeholder: "\u5206\u91CF"
+  }), React.createElement("button", {
+    type: "button",
+    "aria-label": "\u3053\u306E\u6750\u6599\u3092\u524A\u9664",
+    className: "p-2 text-muted hover:text-danger",
+    onClick: () => set('ingredients', f.ingredients.filter((_, x) => x !== k))
+  }, React.createElement(Icon, {
+    name: "Minus",
+    size: 18
+  })))), React.createElement("button", {
+    type: "button",
+    className: btnGhost + ' self-start text-sm',
+    onClick: () => set('ingredients', [...f.ingredients, {
+      name: '',
+      amount: ''
+    }])
+  }, React.createElement(Icon, {
+    name: "Plus",
+    size: 16
+  }), "\u6750\u6599\u3092\u8FFD\u52A0")), React.createElement("div", {
+    className: "flex flex-col gap-2"
+  }, React.createElement("div", {
+    className: "flex items-center justify-between gap-2"
+  }, React.createElement("span", {
+    className: "text-sm font-bold"
+  }, "\u4F5C\u308A\u65B9"), React.createElement("button", {
+    type: "button",
+    onClick: () => setBulk(b => ({
+      ...b,
+      step: !b.step
+    })),
+    className: "text-xs font-bold text-primary flex items-center gap-1"
+  }, React.createElement(Icon, {
+    name: "ClipboardPaste",
+    size: 14
+  }), "\u307E\u3068\u3081\u3066\u8CBC\u308A\u4ED8\u3051")), bulk.step && React.createElement("div", {
+    className: "rounded-xl bg-sunk p-3 flex flex-col gap-2"
+  }, React.createElement("textarea", {
+    id: "bulk-step",
+    rows: 6,
+    value: bulkText.step,
+    onChange: e => setBulkText(b => ({
+      ...b,
+      step: e.target.value
+    })),
+    className: field + ' text-sm',
+    placeholder: '作り方をまるごと貼り付け\n例）\n①鶏肉に穴をあける\n②ラップをして3分加熱\n③たれをかける'
+  }), React.createElement("p", {
+    className: "text-xs text-muted"
+  }, "\u2460\u2461\u30841. 2. \u306A\u3069\u306E\u756A\u53F7\u3054\u3068\u306B\u624B\u9806\u3092\u5206\u3051\u307E\u3059\u3002\u756A\u53F7\u304C\u306A\u3044\u5834\u5408\u306F1\u884C\u30921\u624B\u9806\u306B\u3057\u307E\u3059\u3002"), React.createElement("div", {
+    className: "flex gap-2"
+  }, React.createElement("button", {
+    type: "button",
+    className: btnGhost + ' flex-1 text-sm',
+    onClick: () => setBulk(b => ({
+      ...b,
+      step: false
+    }))
+  }, "\u9589\u3058\u308B"), React.createElement("button", {
+    type: "button",
+    className: btnPrimary + ' flex-[2] text-sm py-2.5',
+    onClick: () => {
+      if (applySteps(bulkText.step)) {
+        setBulkText(b => ({
+          ...b,
+          step: ''
+        }));
+        setBulk(b => ({
+          ...b,
+          step: false
+        }));
+      }
+    }
+  }, React.createElement(Icon, {
+    name: "ListOrdered",
+    size: 16
+  }), "\u624B\u9806\u306B\u5206\u3051\u3066\u5165\u308C\u308B"))), f.steps.map((s, k) => React.createElement("div", {
+    key: k,
+    className: "flex gap-2 items-start"
+  }, React.createElement("span", {
+    className: "shrink-0 mt-2 w-7 h-7 rounded-full bg-primary text-pink text-sm font-bold flex items-center justify-center tnum"
+  }, k + 1), React.createElement("textarea", {
+    id: `step-${k}`,
+    "aria-label": `手順${k + 1}`,
+    rows: 2,
+    value: s,
+    onChange: e => setStep(k, e.target.value),
+    onPaste: e => onPasteStep(e, k),
+    className: field + ' flex-1 min-w-0'
+  }), React.createElement("button", {
+    type: "button",
+    "aria-label": "\u3053\u306E\u624B\u9806\u3092\u524A\u9664",
+    className: "p-2 mt-1 text-muted hover:text-danger",
+    onClick: () => set('steps', f.steps.filter((_, x) => x !== k))
+  }, React.createElement(Icon, {
+    name: "Minus",
+    size: 18
+  })))), React.createElement("button", {
+    type: "button",
+    className: btnGhost + ' self-start text-sm',
+    onClick: () => set('steps', [...f.steps, ''])
+  }, React.createElement(Icon, {
+    name: "Plus",
+    size: 16
+  }), "\u624B\u9806\u3092\u8FFD\u52A0")), React.createElement("div", {
+    className: "flex flex-col gap-1.5"
+  }, React.createElement("label", {
+    htmlFor: "kcal",
+    className: "text-sm font-bold"
+  }, "\u63A8\u5B9A\u30AB\u30ED\u30EA\u30FC\uFF081\u4EBA\u5206\uFF09"), React.createElement("div", {
+    className: "flex gap-2 items-center"
+  }, React.createElement("div", {
+    className: "relative flex-1"
+  }, React.createElement("input", {
+    id: "kcal",
+    inputMode: "numeric",
+    value: f.kcal,
+    onChange: e => {
+      set('kcal', e.target.value);
+      set('kcalEstimated', false);
+    },
+    className: field + ' pr-14 tnum',
+    placeholder: "\u4F8B\uFF1A350"
+  }), React.createElement("span", {
+    className: "absolute right-3.5 top-1/2 -translate-y-1/2 text-muted text-sm"
+  }, "kcal")), React.createElement("button", {
+    type: "button",
+    onClick: estimate,
+    className: btnGhost + ' text-sm shrink-0'
+  }, React.createElement(Icon, {
+    name: "Calculator",
+    size: 16
+  }), "\u6750\u6599\u304B\u3089\u63A8\u5B9A")), f.kcalEstimated && React.createElement("p", {
+    className: "text-xs text-muted"
+  }, "\u6750\u6599\u304B\u3089\u306E\u6982\u7B97\u3067\u3059\u3002\u6295\u7A3F\u306B\u8A18\u8F09\u304C\u3042\u308C\u3070\u305D\u3061\u3089\u3092\u512A\u5148\u3057\u3066\u304F\u3060\u3055\u3044\u3002")), React.createElement("div", {
+    className: "flex flex-col gap-2"
+  }, React.createElement("span", {
+    className: "text-sm font-bold"
+  }, "\u30AB\u30C6\u30B4\u30EA\uFF08\u8907\u6570\u9078\u3079\u307E\u3059\uFF09"), React.createElement("div", {
+    className: "flex flex-wrap gap-2"
+  }, categories.map(c => React.createElement(Chip, {
+    key: c,
+    active: f.categories.includes(c),
+    onClick: () => toggleCat(c)
+  }, f.categories.includes(c) && React.createElement(Icon, {
+    name: "Check",
+    size: 14,
+    className: "inline -mt-0.5 mr-0.5"
+  }), c))), React.createElement("div", {
+    className: "flex gap-2"
+  }, React.createElement("input", {
+    id: "newcat-form",
+    value: newCat,
+    onChange: e => setNewCat(e.target.value),
+    onKeyDown: e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addCat();
+      }
+    },
+    className: field + ' text-sm',
+    placeholder: "\u65B0\u3057\u3044\u30AB\u30C6\u30B4\u30EA\u540D"
+  }), React.createElement("button", {
+    type: "button",
+    onClick: addCat,
+    className: btnGhost + ' shrink-0 text-sm'
+  }, React.createElement(Icon, {
+    name: "Tag",
+    size: 16
+  }), "\u8FFD\u52A0"))), React.createElement("div", {
+    className: "flex gap-2 pt-2"
+  }, onCancel && React.createElement("button", {
+    type: "button",
+    onClick: onCancel,
+    className: btnGhost + ' flex-1'
+  }, "\u3084\u3081\u308B"), React.createElement("button", {
+    type: "submit",
+    className: btnPrimary + ' flex-[2]'
+  }, React.createElement(Icon, {
+    name: "Save",
+    size: 18
+  }), f.id ? '変更を保存' : 'レシピを保存')));
+}
+function RecipePicker({
+  open,
+  day,
+  onClose,
+  recipes,
+  onChoose,
+  onAuto,
+  onOff,
+  isOff
+}) {
+  const [q, setQ] = useState('');
+  const [src, setSrc] = useState('fav');
+  useEffect(() => {
+    if (open) {
+      setQ('');
+      setSrc(recipes.some(r => r.fav) ? 'fav' : 'mine');
+    }
+  }, [open]);
+  const nq = canon(q);
+  const base = src === 'fav' ? recipes.filter(r => r.fav) : src === 'mine' ? recipes : GENERIC;
+  const list = base.filter(r => !nq || canon(r.name).includes(nq) || (r.ingredients || []).some(i => canon(i.name).includes(nq)));
+  return React.createElement(Sheet, {
+    open: open,
+    onClose: onClose,
+    title: day != null ? `${DAYS[day]}曜日のメニューを変更` : ''
+  }, React.createElement("div", {
+    className: "flex flex-col gap-3"
+  }, React.createElement("div", {
+    className: "grid grid-cols-2 gap-2"
+  }, React.createElement("button", {
+    onClick: onAuto,
+    className: btnGhost + ' text-sm'
+  }, React.createElement(Icon, {
+    name: "Shuffle",
+    size: 16
+  }), "\u304A\u307E\u304B\u305B\u3067\u5909\u66F4"), React.createElement("button", {
+    onClick: onOff,
+    disabled: isOff,
+    className: btnGhost + ' text-sm disabled:opacity-50'
+  }, React.createElement(Icon, {
+    name: "Moon",
+    size: 16
+  }), "\u4F5C\u3089\u306A\u3044\u65E5\u306B\u3059\u308B")), React.createElement("label", {
+    className: "relative block"
+  }, React.createElement("span", {
+    className: "absolute left-3.5 top-1/2 -translate-y-1/2 text-muted"
+  }, React.createElement(Icon, {
+    name: "Search",
+    size: 16
+  })), React.createElement("input", {
+    id: "picker-search",
+    value: q,
+    onChange: e => setQ(e.target.value),
+    placeholder: "\u6599\u7406\u540D\u30FB\u6750\u6599\u3067\u63A2\u3059",
+    className: field + ' pl-10 text-sm'
+  })), React.createElement("div", {
+    className: "grid grid-cols-3 gap-1 p-1 rounded-xl bg-sunk text-sm"
+  }, [['fav', 'お気に入り'], ['mine', 'マイレシピ'], ['generic', '定番']].map(([k, l]) => React.createElement("button", {
+    key: k,
+    onClick: () => setSrc(k),
+    className: `rounded-lg py-1.5 font-bold ${src === k ? 'bg-surface shadow-sm' : 'text-muted'}`
+  }, l))), React.createElement("ul", {
+    className: "flex flex-col gap-1"
+  }, list.map(r => React.createElement("li", {
+    key: r.id
+  }, React.createElement("button", {
+    onClick: () => onChoose(src === 'generic' ? 'generic' : 'mine', r),
+    className: "w-full flex items-center gap-3 p-2 rounded-xl hover:bg-sunk text-left"
+  }, React.createElement(Photo, {
+    r: r,
+    className: "w-12 h-12 rounded-lg shrink-0"
+  }), React.createElement("span", {
+    className: "flex-1 min-w-0"
+  }, React.createElement("span", {
+    className: "block truncate font-medium"
+  }, r.name), React.createElement("span", {
+    className: "text-xs text-muted tnum"
+  }, r.kcal ? `${r.kcal}kcal` : '', (r.categories || []).length ? `・${r.categories.slice(0, 2).join('・')}` : '')), r.fav && React.createElement(Icon, {
+    name: "Heart",
+    size: 14,
+    fill: "currentColor",
+    className: "text-danger"
+  }), React.createElement(Icon, {
+    name: "ChevronRight",
+    size: 16,
+    className: "text-muted"
+  })))), !list.length && React.createElement("li", {
+    className: "text-sm text-muted p-3 text-center"
+  }, src === 'fav' ? 'お気に入りはまだありません' : '見つかりませんでした'))));
+}
+function WeekPlan({
+  plan,
+  setPlan,
+  recipes,
+  categories,
+  onOpen,
+  onMakeList,
+  offDays,
+  setOffDays
+}) {
+  const [mode, setMode] = useState(plan.mode || 'balanced');
+  const [fridgeIn, setFridgeIn] = useState('');
+  const [fridge, setFridge] = useState(plan.fridge || []);
+  const [catF, setCatF] = useState('');
+  const [favBoost, setFavBoost] = useState(true);
+  const [pickDay, setPickDay] = useState(null);
+  function addFridge() {
+    const parts = fridgeIn.split(/[、,，\s　]+/).map(s => s.trim()).filter(Boolean);
+    if (!parts.length) return;
+    setFridge([...new Set([...fridge, ...parts])]);
+    setFridgeIn('');
+  }
+  const cookN = 7 - offDays.length;
+  function generate() {
+    const list = mode === 'fridge' ? planFromFridge(recipes, fridge, cookN) : planBalanced(recipes, catF, cookN, favBoost);
+    setPlan({
+      mode,
+      fridge,
+      days: spread(list, offDays),
+      weekStart: nextMonday(),
+      createdAt: Date.now()
+    });
+  }
+  function setDay(idx, entry) {
+    const days = [...plan.days];
+    days[idx] = entry;
+    setPlan({
+      ...plan,
+      days
+    });
+  }
+  function auto(idx) {
+    const used = new Set(plan.days.map(d => d && d.id));
+    const all = [...recipes.map(r => ({
+      source: 'mine',
+      r
+    })), ...GENERIC.map(r => ({
+      source: 'generic',
+      r
+    }))].filter(x => !used.has(x.r.id));
+    let cands;
+    if (plan.mode === 'fridge') cands = all.map(x => ({
+      ...x,
+      s: scoreRecipe(x.r, plan.fridge || [])
+    })).sort((a, b) => b.s.score - a.s.score + (Math.random() - .5) * .3).slice(0, 5);else {
+      const mine = all.filter(x => x.source === 'mine');
+      const favs = mine.filter(x => x.r.fav);
+      cands = favs.length && Math.random() < .5 ? favs : mine.length ? mine : all;
+    }
+    if (!cands.length) return;
+    const c = cands[Math.floor(Math.random() * cands.length)];
+    setDay(idx, {
+      source: c.source,
+      id: c.r.id,
+      ...(c.s ? {
+        hit: c.s.hit,
+        total: c.s.total
+      } : {})
+    });
+  }
+  function choose(idx, source, r) {
+    const s = plan.mode === 'fridge' ? scoreRecipe(r, plan.fridge || []) : null;
+    setDay(idx, {
+      source,
+      id: r.id,
+      ...(s ? {
+        hit: s.hit,
+        total: s.total
+      } : {})
+    });
+    setPickDay(null);
+  }
+  const ws = plan.weekStart ? new Date(plan.weekStart) : null;
+  const dateOf = i => {
+    if (!ws) return '';
+    const d = new Date(ws);
+    d.setDate(d.getDate() + i);
+    return `${d.getMonth() + 1}/${d.getDate()}`;
+  };
+  const cooking = (plan.days || []).filter(d => d && !d.off);
+  const totalK = cooking.reduce((s, d) => s + ((findRecipe(d, recipes) || {}).kcal || 0), 0);
+  return React.createElement("div", {
+    className: "flex flex-col gap-5"
+  }, React.createElement("div", {
+    className: "grid grid-cols-2 gap-1 p-1 rounded-2xl bg-sunk"
+  }, [['fridge', 'Refrigerator', '食材から提案'], ['balanced', 'Shuffle', '献立から買い物']].map(([m, ic, l]) => React.createElement("button", {
+    key: m,
+    onClick: () => setMode(m),
+    className: `rounded-xl py-2.5 text-sm font-bold flex items-center justify-center gap-1.5 ${mode === m ? 'bg-surface shadow-sm text-ink' : 'text-muted'}`
+  }, React.createElement(Icon, {
+    name: ic,
+    size: 16
+  }), l))), React.createElement("section", {
+    className: "ticket rounded-2xl p-4 flex flex-col gap-3"
+  }, mode === 'fridge' ? React.createElement(React.Fragment, null, React.createElement("p", {
+    className: "text-sm text-muted"
+  }, "\u51B7\u8535\u5EAB\u306B\u3042\u308B\u98DF\u6750\u3092\u5165\u308C\u308B\u3068\u3001\u4FDD\u5B58\u30EC\u30B7\u30D4\u304B\u3089\u4F5C\u308C\u308B\u3082\u306E\u3092\u512A\u5148\u3057\u3001\u8DB3\u308A\u306A\u3044\u65E5\u306F\u5B9A\u756A\u30EC\u30B7\u30D4\u3067\u57CB\u3081\u307E\u3059\u3002\u624B\u6301\u3061\u306E\u98DF\u6750\u3092\u591A\u304F\u4F7F\u3046\u3082\u306E\u307B\u3069\u9031\u306E\u524D\u534A\u306B\u4E26\u3073\u307E\u3059\u3002"), React.createElement("div", {
+    className: "flex gap-2"
+  }, React.createElement("input", {
+    id: "fridge",
+    value: fridgeIn,
+    onChange: e => setFridgeIn(e.target.value),
+    onKeyDown: e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addFridge();
+      }
+    },
+    className: field,
+    placeholder: "\u4F8B\uFF1A\u9D8F\u3080\u306D\u3001\u30AD\u30E3\u30D9\u30C4\u3001\u5375"
+  }), React.createElement("button", {
+    onClick: addFridge,
+    className: btnGhost + ' shrink-0',
+    "aria-label": "\u98DF\u6750\u3092\u8FFD\u52A0"
+  }, React.createElement(Icon, {
+    name: "Plus"
+  }))), React.createElement("div", {
+    className: "flex flex-wrap gap-2"
+  }, fridge.map(x => React.createElement("span", {
+    key: x,
+    className: "inline-flex items-center gap-1 rounded-full bg-primary/10 border border-primary/30 px-3 py-1 text-sm"
+  }, x, React.createElement("button", {
+    "aria-label": `${x}を外す`,
+    onClick: () => setFridge(fridge.filter(y => y !== x)),
+    className: "text-muted hover:text-danger"
+  }, React.createElement(Icon, {
+    name: "X",
+    size: 14
+  })))), !fridge.length && React.createElement("span", {
+    className: "text-sm text-muted"
+  }, "\u307E\u3060\u98DF\u6750\u304C\u3042\u308A\u307E\u305B\u3093"))) : React.createElement(React.Fragment, null, React.createElement("p", {
+    className: "text-sm text-muted"
+  }, "\u4FDD\u5B58\u30EC\u30B7\u30D4\u304B\u3089\u30AB\u30C6\u30B4\u30EA\u304C\u7D9A\u304B\u306A\u3044\u3088\u3046\u306B\u9078\u3073\u3001\u4F7F\u3046\u6750\u6599\u3092\u307E\u3068\u3081\u3066\u8CB7\u3044\u7269\u30EA\u30B9\u30C8\u306B\u3057\u307E\u3059\u3002"), React.createElement("div", {
+    className: "flex flex-col gap-1.5"
+  }, React.createElement("span", {
+    className: "text-xs font-bold text-muted label"
+  }, "\u3057\u307C\u308A\u8FBC\u307F\uFF08\u4EFB\u610F\uFF09"), React.createElement("div", {
+    className: "scrollx -mx-4 px-4 flex gap-2"
+  }, React.createElement(Chip, {
+    small: true,
+    active: !catF,
+    onClick: () => setCatF('')
+  }, "\u6307\u5B9A\u306A\u3057"), categories.map(c => React.createElement(Chip, {
+    small: true,
+    key: c,
+    active: catF === c,
+    onClick: () => setCatF(catF === c ? '' : c)
+  }, c)))), React.createElement("label", {
+    className: "flex items-center gap-2 text-sm cursor-pointer"
+  }, React.createElement("input", {
+    id: "favboost",
+    type: "checkbox",
+    checked: favBoost,
+    onChange: e => setFavBoost(e.target.checked),
+    className: "w-4 h-4 accent-[rgb(var(--primary))]"
+  }), React.createElement(Icon, {
+    name: "Heart",
+    size: 14,
+    className: "text-danger",
+    fill: "currentColor"
+  }), "\u304A\u6C17\u306B\u5165\u308A\u3092\u591A\u3081\u306B\u5165\u308C\u308B")), React.createElement("div", {
+    className: "flex flex-col gap-1.5 pt-1 border-t border-line/70"
+  }, React.createElement("span", {
+    className: "text-xs font-bold text-muted label pt-2 flex items-center gap-1"
+  }, React.createElement(Icon, {
+    name: "Moon",
+    size: 13
+  }), "\u4F5C\u3089\u306A\u3044\u66DC\u65E5\uFF08\u5916\u98DF\u30FB\u4F5C\u308A\u7F6E\u304D\u30FB\u304A\u4F11\u307F\uFF09"), React.createElement("div", {
+    className: "grid grid-cols-7 gap-1"
+  }, DAYS.map((d, i) => {
+    const on = offDays.includes(i);
+    return React.createElement("button", {
+      key: d,
+      onClick: () => setOffDays(on ? offDays.filter(x => x !== i) : [...offDays, i].sort()),
+      "aria-pressed": on,
+      className: `aspect-square rounded-xl text-sm font-bold border flex flex-col items-center justify-center ${on ? 'bg-ink text-bg border-ink' : 'bg-surface border-line'}`
+    }, d, on && React.createElement("span", {
+      className: "text-[9px] font-medium leading-none mt-0.5"
+    }, "\u4F11"));
+  })), React.createElement("span", {
+    className: "text-xs text-muted tnum"
+  }, "\u4F5C\u308B\u65E5\u306F\u9031", cookN, "\u65E5\u3067\u3059")), React.createElement("button", {
+    onClick: generate,
+    disabled: mode === 'fridge' && !fridge.length || cookN === 0,
+    className: btnPrimary
+  }, React.createElement(Icon, {
+    name: "Sparkles",
+    size: 18
+  }), mode === 'fridge' ? 'この食材で1週間を組む' : '1週間の献立をつくる')), plan.days && plan.days.length > 0 && React.createElement("section", {
+    className: "flex flex-col gap-3"
+  }, React.createElement("div", {
+    className: "flex items-end justify-between gap-2"
+  }, React.createElement("div", null, React.createElement("h2", {
+    className: "font-display text-xl font-bold"
+  }, "\u4ECA\u9031\u306E\u732E\u7ACB"), React.createElement("p", {
+    className: "text-xs text-muted tnum"
+  }, ws ? `${dateOf(0)}（月）〜 ${dateOf(6)}（日）` : '', "\u30FB", plan.mode === 'fridge' ? '食材から提案' : 'バランス自動')), React.createElement("span", {
+    className: "text-xs text-muted tnum text-right"
+  }, "\u4F5C\u308B\u65E5 ", cooking.length, "\u65E5", React.createElement("br", null), "\u5E73\u5747 ", cooking.length ? Math.round(totalK / cooking.length) : 0, " kcal")), React.createElement("ol", {
+    className: "flex flex-col gap-2"
+  }, plan.days.map((d, idx) => {
+    const r = findRecipe(d, recipes);
+    const off = !d || d.off;
+    return React.createElement("li", {
+      key: idx,
+      className: `rounded-2xl flex items-stretch overflow-hidden ${off ? 'stamp bg-sunk/50' : 'ticket'}`
+    }, React.createElement("div", {
+      className: `w-14 shrink-0 flex flex-col items-center justify-center ${off ? '' : idx >= 5 ? 'bg-honey/15' : 'bg-sunk'}`
+    }, React.createElement("span", {
+      className: `font-display text-xl font-bold ${off ? 'text-muted' : ''}`
+    }, DAYS[idx]), React.createElement("span", {
+      className: "text-[11px] text-muted tnum"
+    }, dateOf(idx))), off ? React.createElement("div", {
+      className: "flex-1 min-w-0 flex items-center gap-3 p-2.5 text-muted"
+    }, React.createElement("span", {
+      className: "w-12 h-12 rounded-xl shrink-0 border border-line flex items-center justify-center"
+    }, React.createElement(Icon, {
+      name: "Moon",
+      size: 20
+    })), React.createElement("div", {
+      className: "min-w-0"
+    }, React.createElement("p", {
+      className: "font-bold"
+    }, "\u4F5C\u3089\u306A\u3044\u65E5"), React.createElement("p", {
+      className: "text-xs"
+    }, "\u5916\u98DF\u30FB\u4F5C\u308A\u7F6E\u304D\u30FB\u304A\u4F11\u307F"))) : React.createElement("button", {
+      onClick: () => r && onOpen(r),
+      className: "flex-1 min-w-0 flex items-center gap-3 p-2.5 text-left"
+    }, React.createElement(Photo, {
+      r: r,
+      className: "w-12 h-12 rounded-xl shrink-0"
+    }), React.createElement("div", {
+      className: "min-w-0"
+    }, React.createElement("p", {
+      className: "font-bold leading-snug truncate"
+    }, r ? r.name : '未設定', r && r.fav && React.createElement(Icon, {
+      name: "Heart",
+      size: 12,
+      fill: "currentColor",
+      className: "inline ml-1 -mt-0.5 text-danger"
+    })), React.createElement("p", {
+      className: "text-xs text-muted flex flex-wrap gap-x-2"
+    }, React.createElement("span", {
+      className: d.source === 'generic' ? 'text-honey font-bold' : ''
+    }, d.source === 'generic' ? '定番' : 'マイレシピ'), r && r.kcal ? React.createElement("span", {
+      className: "tnum"
+    }, r.kcal, "kcal") : null, plan.mode === 'fridge' && d.total ? React.createElement("span", {
+      className: "tnum"
+    }, "\u624B\u6301\u3061 ", d.hit, "/", d.total) : null))), React.createElement("div", {
+      className: "flex flex-col justify-center gap-1 pr-2 pl-1"
+    }, off ? React.createElement("button", {
+      onClick: () => auto(idx),
+      className: "rounded-lg border border-line bg-surface px-2.5 py-1.5 text-xs font-bold flex items-center gap-1"
+    }, React.createElement(Icon, {
+      name: "CookingPot",
+      size: 14
+    }), "\u4F5C\u308B") : React.createElement(React.Fragment, null, React.createElement("button", {
+      onClick: () => setPickDay(idx),
+      className: "rounded-lg border border-line bg-surface px-2.5 py-1.5 text-xs font-bold flex items-center gap-1 hover:border-primary/60"
+    }, React.createElement(Icon, {
+      name: "ArrowLeftRight",
+      size: 14
+    }), "\u5909\u66F4"), React.createElement("button", {
+      onClick: () => setDay(idx, {
+        off: true
+      }),
+      className: "rounded-lg px-2.5 py-1 text-[11px] text-muted flex items-center gap-1 hover:text-ink"
+    }, React.createElement(Icon, {
+      name: "Moon",
+      size: 12
+    }), "\u4F11\u307F"))));
+  })), React.createElement("button", {
+    onClick: onMakeList,
+    disabled: !cooking.length,
+    className: btnPrimary
+  }, React.createElement(Icon, {
+    name: "ShoppingCart",
+    size: 18
+  }), "\u3053\u306E\u732E\u7ACB\u3067\u8CB7\u3044\u7269\u30EA\u30B9\u30C8\u3092\u4F5C\u308B")), React.createElement(RecipePicker, {
+    open: pickDay != null,
+    day: pickDay,
+    onClose: () => setPickDay(null),
+    recipes: recipes,
+    isOff: pickDay != null && plan.days[pickDay] && plan.days[pickDay].off,
+    onChoose: (s, r) => choose(pickDay, s, r),
+    onAuto: () => {
+      auto(pickDay);
+      setPickDay(null);
+    },
+    onOff: () => {
+      setDay(pickDay, {
+        off: true
+      });
+      setPickDay(null);
+    }
+  }));
+}
+function Shopping({
+  items,
+  setItems,
+  hasPlan,
+  goPlan,
+  toast
+}) {
+  const [name, setName] = useState('');
+  const toggle = id => setItems(items.map(i => i.id === id ? {
+    ...i,
+    checked: !i.checked
+  } : i));
+  const add = () => {
+    const n = name.trim();
+    if (!n) return;
+    setItems([...items, {
+      id: uid(),
+      name: n,
+      amount: '',
+      group: 'manual',
+      manual: true,
+      checked: false
+    }]);
+    setName('');
+  };
+  const left = items.filter(i => !i.checked).length;
+  const groups = [['food', '食材', 'Carrot'], ['manual', '追加したもの', 'PenLine'], ['pantry', '調味料・常備品（家にあれば不要）', 'Soup']];
+  async function copy() {
+    const txt = items.filter(i => !i.checked).map(i => `□ ${i.name}${i.amount ? ' ' + i.amount : ''}`).join('\n');
+    try {
+      await navigator.clipboard.writeText(txt);
+      toast('未チェックの品をコピーしました');
+    } catch (e) {
+      toast('コピーできませんでした');
+    }
+  }
+  if (!items.length) return React.createElement("div", {
+    className: "stamp rounded-2xl p-8 text-center text-muted flex flex-col items-center gap-3"
+  }, React.createElement(Icon, {
+    name: "ShoppingCart",
+    size: 32,
+    strokeWidth: 1.5
+  }), React.createElement("p", null, hasPlan ? '献立タブの「買い物リストを作る」で作成できます。' : 'まず1週間の献立をつくりましょう。'), React.createElement("button", {
+    className: btnPrimary,
+    onClick: goPlan
+  }, React.createElement(Icon, {
+    name: "CalendarDays"
+  }), "\u732E\u7ACB\u3078"), React.createElement("div", {
+    className: "flex gap-2 w-full mt-2"
+  }, React.createElement("input", {
+    id: "manual-add-empty",
+    value: name,
+    onChange: e => setName(e.target.value),
+    onKeyDown: e => {
+      if (e.key === 'Enter') add();
+    },
+    className: field,
+    placeholder: "\u624B\u3067\u8FFD\u52A0\uFF08\u4F8B\uFF1A\u725B\u4E73\uFF09"
+  }), React.createElement("button", {
+    onClick: add,
+    className: btnGhost + ' shrink-0',
+    "aria-label": "\u8FFD\u52A0"
+  }, React.createElement(Icon, {
+    name: "Plus"
+  }))));
+  return React.createElement("div", {
+    className: "flex flex-col gap-4"
+  }, React.createElement("div", {
+    className: "flex items-center justify-between"
+  }, React.createElement("div", null, React.createElement("h2", {
+    className: "font-display text-xl font-bold"
+  }, "\u8CB7\u3044\u7269\u30EA\u30B9\u30C8"), React.createElement("p", {
+    className: "text-xs text-muted tnum"
+  }, "\u6B8B\u308A ", left, " / ", items.length, " \u54C1")), React.createElement("div", {
+    className: "flex gap-1"
+  }, React.createElement("button", {
+    onClick: copy,
+    className: "p-2.5 rounded-xl hover:bg-sunk text-muted",
+    "aria-label": "\u30EA\u30B9\u30C8\u3092\u30B3\u30D4\u30FC"
+  }, React.createElement(Icon, {
+    name: "Copy",
+    size: 18
+  })), React.createElement("button", {
+    onClick: () => setItems(items.filter(i => !i.checked)),
+    className: "p-2.5 rounded-xl hover:bg-sunk text-muted",
+    "aria-label": "\u30C1\u30A7\u30C3\u30AF\u6E08\u307F\u3092\u6D88\u3059"
+  }, React.createElement(Icon, {
+    name: "ListX",
+    size: 18
+  })))), React.createElement("div", {
+    className: "h-2 rounded-full bg-sunk overflow-hidden"
+  }, React.createElement("div", {
+    className: "h-full bg-primary transition-all",
+    style: {
+      width: `${items.length ? (items.length - left) / items.length * 100 : 0}%`
+    }
+  })), React.createElement("div", {
+    className: "flex gap-2"
+  }, React.createElement("input", {
+    id: "manual-add",
+    value: name,
+    onChange: e => setName(e.target.value),
+    onKeyDown: e => {
+      if (e.key === 'Enter') add();
+    },
+    className: field,
+    placeholder: "\u624B\u3067\u8FFD\u52A0\uFF08\u4F8B\uFF1A\u725B\u4E73\uFF09"
+  }), React.createElement("button", {
+    onClick: add,
+    className: btnGhost + ' shrink-0',
+    "aria-label": "\u8FFD\u52A0"
+  }, React.createElement(Icon, {
+    name: "Plus"
+  }))), groups.map(([g, label, ic]) => {
+    const list = items.filter(i => (i.group || 'food') === g);
+    if (!list.length) return null;
+    return React.createElement("section", {
+      key: g
+    }, React.createElement("h3", {
+      className: "text-xs font-bold text-muted label mb-2 flex items-center gap-1.5"
+    }, React.createElement(Icon, {
+      name: ic,
+      size: 14
+    }), label), React.createElement("ul", {
+      className: "ticket rounded-2xl divide-y divide-line/70"
+    }, list.map(i => React.createElement("li", {
+      key: i.id
+    }, React.createElement("label", {
+      className: "flex items-center gap-3 px-4 py-3 cursor-pointer"
+    }, React.createElement("input", {
+      type: "checkbox",
+      id: `chk-${i.id}`,
+      checked: i.checked,
+      onChange: () => toggle(i.id),
+      className: "sr-only peer"
+    }), React.createElement("span", {
+      className: `w-6 h-6 shrink-0 rounded-md border-2 flex items-center justify-center ${i.checked ? 'bg-primary border-primary text-pink' : 'border-line bg-surface'}`
+    }, i.checked && React.createElement(Icon, {
+      name: "Check",
+      size: 14,
+      strokeWidth: 3
+    })), React.createElement("span", {
+      className: `flex-1 min-w-0 ${i.checked ? 'line-through text-muted' : ''}`
+    }, React.createElement("span", {
+      className: "block"
+    }, i.name), i.from && React.createElement("span", {
+      className: "block text-[11px] text-muted"
+    }, i.from, "\u66DC")), React.createElement("span", {
+      className: `text-sm tnum text-right shrink-0 max-w-[45%] ${i.checked ? 'text-muted' : ''}`
+    }, i.amount), i.manual && React.createElement("button", {
+      type: "button",
+      "aria-label": `${i.name}を削除`,
+      onClick: e => {
+        e.preventDefault();
+        setItems(items.filter(x => x.id !== i.id));
+      },
+      className: "text-muted hover:text-danger"
+    }, React.createElement(Icon, {
+      name: "X",
+      size: 16
+    })))))));
+  }));
+}
+function FamilySection({
+  backend,
+  toast,
+  askConfirm,
+  localSnapshot
+}) {
+  const share = LS.get('share', null);
+  const saved = LS.get('fbcfg', null);
+  const [cfgText, setCfgText] = useState('');
+  const [joinText, setJoinText] = useState('');
+  const [busy, setBusy] = useState('');
+  const [err, setErr] = useState('');
+  const [showQR, setShowQR] = useState(false);
+  async function create() {
+    setErr('');
+    const cfg = parseFirebaseConfig(cfgText || (saved ? JSON.stringify(saved) : ''));
+    if (!cfg) {
+      setErr('Firebaseの設定を読み取れませんでした。「const firebaseConfig = {…}」の部分をまるごと貼り付けてください。');
+      return;
+    }
+    const code = genFamilyCode();
+    const cloud = createCloudBackend(cfg, code);
+    setBusy('Firebaseに接続しています…');
+    try {
+      const t = await withTimeout(cloud.probe(), 20000);
+      if (t === 'timeout') throw {
+        code: 'unavailable'
+      };
+      setBusy('レシピをアップロードしています…');
+      const snap = localSnapshot();
+      await cloud.uploadAll(snap);
+      LS.set('fbcfg', cfg);
+      LS.set('share', {
+        cfg,
+        code
+      });
+      LS.set('justCreated', true);
+      location.reload();
+    } catch (e) {
+      console.error(e);
+      setErr(fbErrorText(e));
+      setBusy('');
+    }
+  }
+  async function joinFrom(text) {
+    const inv = parseInvite(text);
+    if (!inv) {
+      setErr('招待リンクを読み取れませんでした。送られてきたリンクをまるごと貼り付けてください。');
+      return;
+    }
+    location.hash = 'join=' + text.split('join=')[1];
+    location.reload();
+  }
+  if (backend.kind === 'cloud' && share) {
+    const link = inviteLink(share.cfg, share.code);
+    return React.createElement("section", {
+      className: "flex flex-col gap-3"
+    }, React.createElement("h3", {
+      className: "font-display font-bold flex items-center gap-2"
+    }, React.createElement(Icon, {
+      name: "Users",
+      size: 18,
+      className: "text-primary"
+    }), "\u5BB6\u65CF\u3067\u5171\u6709"), React.createElement("div", {
+      className: "rounded-2xl bg-primary/10 border border-primary/30 p-4 flex flex-col gap-1"
+    }, React.createElement("p", {
+      className: "font-bold flex items-center gap-2"
+    }, React.createElement(Icon, {
+      name: "Cloud",
+      size: 16
+    }), "\u5BB6\u65CF\u306E\u732E\u7ACB\u5E16\u3092\u5171\u6709\u4E2D"), React.createElement("p", {
+      className: "text-xs text-muted"
+    }, "\u30EC\u30B7\u30D4\u30FB\u732E\u7ACB\u30FB\u8CB7\u3044\u7269\u30EA\u30B9\u30C8\u304C\u3001\u53C2\u52A0\u3057\u3066\u3044\u308B\u5168\u54E1\u306E\u753B\u9762\u306B\u3059\u3050\u53CD\u6620\u3055\u308C\u307E\u3059\u3002\u30AA\u30D5\u30E9\u30A4\u30F3\u4E2D\u306E\u5909\u66F4\u306F\u3001\u3064\u306A\u304C\u3063\u305F\u3068\u304D\u306B\u540C\u671F\u3055\u308C\u307E\u3059\u3002"), React.createElement("p", {
+      className: "text-xs text-muted mt-1 tnum"
+    }, "\u5BB6\u65CF\u30B3\u30FC\u30C9\uFF1A", React.createElement("span", {
+      className: "font-mono text-ink select-all"
+    }, share.code))), React.createElement("p", {
+      className: "text-sm"
+    }, "\u5BB6\u65CF\u3092\u62DB\u5F85\u3059\u308B\u306B\u306F\u3001\u4E0B\u306E\u30EA\u30F3\u30AF\u3092\u9001\u308B\u304B\u3001QR\u30B3\u30FC\u30C9\u3092\u5BB6\u65CF\u306E\u30B9\u30DE\u30DB\u3067\u8AAD\u307F\u53D6\u3063\u3066\u3082\u3089\u3044\u307E\u3059\u3002"), React.createElement("div", {
+      className: "grid grid-cols-2 gap-2"
+    }, React.createElement("button", {
+      className: btnPrimary,
+      onClick: () => shareOrCopy(`わたしの献立帖に招待します。このリンクを開くと参加できます。\n${link}`, '献立帖への招待', toast)
+    }, React.createElement(Icon, {
+      name: "Send",
+      size: 16
+    }), "\u30EA\u30F3\u30AF\u3092\u9001\u308B"), React.createElement("button", {
+      className: btnGhost,
+      onClick: () => setShowQR(!showQR)
+    }, React.createElement(Icon, {
+      name: "QrCode",
+      size: 16
+    }), "QR\u30B3\u30FC\u30C9")), showQR && React.createElement("div", {
+      className: "flex flex-col items-center gap-2 rounded-2xl bg-white p-4"
+    }, React.createElement("img", {
+      src: qrDataURL(link),
+      alt: "\u62DB\u5F85\u7528QR\u30B3\u30FC\u30C9",
+      className: "w-56 h-56",
+      style: {
+        imageRendering: 'pixelated'
+      }
+    }), React.createElement("p", {
+      className: "text-xs text-neutral-600"
+    }, "\u5BB6\u65CF\u306E\u30B9\u30DE\u30DB\u306E\u30AB\u30E1\u30E9\u3067\u8AAD\u307F\u53D6\u3063\u3066\u304F\u3060\u3055\u3044")), React.createElement("p", {
+      className: "text-xs text-muted"
+    }, "\u3053\u306E\u30EA\u30F3\u30AF\u3092\u77E5\u3063\u3066\u3044\u308B\u4EBA\u306F\u8AB0\u3067\u3082\u30EC\u30B7\u30D4\u3092\u898B\u3066\u7DE8\u96C6\u3067\u304D\u307E\u3059\u3002\u5BB6\u65CF\u4EE5\u5916\u306B\u306F\u9001\u3089\u306A\u3044\u3067\u304F\u3060\u3055\u3044\u3002"), React.createElement("button", {
+      className: btnGhost + ' text-sm',
+      onClick: () => askConfirm({
+        title: 'この端末で共有をやめる',
+        ok: '共有をやめる',
+        body: 'この端末は「端末内のみ」に戻ります。いまの家族のレシピ・献立・買い物リストはこの端末にコピーして残します。家族側のデータはそのまま残り、ほかの家族は引き続き使えます。',
+        onOk: async () => {
+          try {
+            const s = backend.snapshot ? backend.snapshot() : null;
+            if (s) {
+              await store.init();
+              for (const r of s.recipes) await store.put(r);
+              for (const [k, v] of Object.entries(s.meta)) await store.setMeta(k, v);
+              await store.setMeta('shopping', s.shopping);
+              await store.setMeta('seeded', true);
+            }
+          } catch (e) {}
+          LS.del('share');
+          location.reload();
+        }
+      })
+    }, React.createElement(Icon, {
+      name: "LogOut",
+      size: 16
+    }), "\u3053\u306E\u7AEF\u672B\u3067\u5171\u6709\u3092\u3084\u3081\u308B"));
+  }
+  return React.createElement("section", {
+    className: "flex flex-col gap-3"
+  }, React.createElement("h3", {
+    className: "font-display font-bold flex items-center gap-2"
+  }, React.createElement(Icon, {
+    name: "Users",
+    size: 18,
+    className: "text-primary"
+  }), "\u5BB6\u65CF\u3067\u5171\u6709"), React.createElement("p", {
+    className: "text-sm text-muted"
+  }, "\u3044\u307E\u306F\u300C\u3053\u306E\u7AEF\u672B\u306E\u307F\u300D\u306B\u4FDD\u5B58\u3057\u3066\u3044\u307E\u3059\u3002\u5BB6\u65CF\u306E\u732E\u7ACB\u5E16\u3092\u3064\u304F\u308B\u3068\u3001\u30EC\u30B7\u30D4\u30FB\u732E\u7ACB\u30FB\u8CB7\u3044\u7269\u30EA\u30B9\u30C8\u3092\u5BB6\u65CF\u5168\u54E1\u3067\u30EA\u30A2\u30EB\u30BF\u30A4\u30E0\u306B\u5171\u6709\u3067\u304D\u307E\u3059\uFF08\u30C1\u30A7\u30C3\u30AF\u3057\u305F\u54C1\u3082\u3059\u3050\u53CD\u6620\uFF09\u3002"), err && React.createElement("p", {
+    className: "rounded-xl bg-danger/10 text-danger text-sm p-3"
+  }, err), busy ? React.createElement("p", {
+    className: "rounded-xl bg-sunk text-sm p-3 flex items-center gap-2"
+  }, React.createElement(Icon, {
+    name: "Loader",
+    size: 16,
+    className: "animate-spin"
+  }), busy) : React.createElement(React.Fragment, null, React.createElement("details", {
+    className: "rounded-2xl border border-line bg-surface p-4",
+    open: !!saved
+  }, React.createElement("summary", {
+    className: "font-bold cursor-pointer"
+  }, "\u5BB6\u65CF\u306E\u732E\u7ACB\u5E16\u3092\u3064\u304F\u308B\uFF08\u306F\u3058\u3081\u3066\u306E\u4EBA\uFF09"), React.createElement("div", {
+    className: "flex flex-col gap-2 mt-3"
+  }, React.createElement("p", {
+    className: "text-xs text-muted"
+  }, "\u624B\u9806\u66F8\u306E\u3068\u304A\u308A\u306BFirebase\u3067\u4F5C\u3063\u305F\u300CfirebaseConfig\u300D\u3092\u8CBC\u308A\u4ED8\u3051\u307E\u3059\u3002\u3053\u306E\u7AEF\u672B\u306E\u30EC\u30B7\u30D4\u30FB\u732E\u7ACB\u30FB\u8CB7\u3044\u7269\u30EA\u30B9\u30C8\u304C\u305D\u306E\u307E\u307E\u5BB6\u65CF\u306E\u732E\u7ACB\u5E16\u306B\u5165\u308A\u307E\u3059\u3002"), React.createElement("textarea", {
+    id: "fbcfg",
+    rows: 6,
+    value: cfgText || (saved ? JSON.stringify(saved, null, 1) : ''),
+    onChange: e => setCfgText(e.target.value),
+    className: field + ' text-xs font-mono',
+    placeholder: 'const firebaseConfig = {\n  apiKey: "...",\n  authDomain: "...",\n  projectId: "...",\n  ...\n};'
+  }), React.createElement("button", {
+    className: btnPrimary,
+    onClick: create
+  }, React.createElement(Icon, {
+    name: "CloudUpload",
+    size: 16
+  }), "\u5BB6\u65CF\u306E\u732E\u7ACB\u5E16\u3092\u3064\u304F\u308B"))), React.createElement("details", {
+    className: "rounded-2xl border border-line bg-surface p-4"
+  }, React.createElement("summary", {
+    className: "font-bold cursor-pointer"
+  }, "\u62DB\u5F85\u3055\u308C\u3066\u53C2\u52A0\u3059\u308B"), React.createElement("div", {
+    className: "flex flex-col gap-2 mt-3"
+  }, React.createElement("p", {
+    className: "text-xs text-muted"
+  }, "\u9001\u3089\u308C\u3066\u304D\u305F\u30EA\u30F3\u30AF\u3092\u958B\u3051\u3070\u81EA\u52D5\u3067\u53C2\u52A0\u753B\u9762\u306B\u306A\u308A\u307E\u3059\u3002\u3046\u307E\u304F\u958B\u3051\u306A\u3044\u3068\u304D\u306F\u3001\u30EA\u30F3\u30AF\u3092\u3053\u3053\u306B\u8CBC\u308A\u4ED8\u3051\u3066\u304F\u3060\u3055\u3044\u3002"), React.createElement("textarea", {
+    id: "joinlink",
+    rows: 3,
+    value: joinText,
+    onChange: e => setJoinText(e.target.value),
+    className: field + ' text-xs font-mono',
+    placeholder: "https://\u2026#join=\u2026"
+  }), React.createElement("button", {
+    className: btnGhost,
+    onClick: () => joinFrom(joinText)
+  }, React.createElement(Icon, {
+    name: "LogIn",
+    size: 16
+  }), "\u53C2\u52A0\u3059\u308B")))));
+}
+function JoinSheet({
+  invite,
+  onCancel,
+  localSnapshot
+}) {
+  const [busy, setBusy] = useState('');
+  const [err, setErr] = useState('');
+  const mine = (localSnapshot().recipes || []).filter(r => !r.sample);
+  const [includeMine, setIncludeMine] = useState(true);
+  async function join() {
+    setErr('');
+    setBusy('家族の献立帖に接続しています…');
+    const cloud = createCloudBackend(invite.cfg, invite.code);
+    try {
+      const t = await withTimeout(cloud.probe(), 20000);
+      if (t === 'timeout') throw {
+        code: 'unavailable'
+      };
+      if (includeMine && mine.length) {
+        setBusy('あなたのレシピを追加しています…');
+        await cloud.uploadAll({
+          recipes: mine
+        });
+      }
+      LS.set('share', {
+        cfg: invite.cfg,
+        code: invite.code
+      });
+      history.replaceState(null, '', location.pathname + location.search);
+      location.reload();
+    } catch (e) {
+      console.error(e);
+      setErr(fbErrorText(e));
+      setBusy('');
+    }
+  }
+  return React.createElement(Sheet, {
+    open: true,
+    title: "\u5BB6\u65CF\u306E\u732E\u7ACB\u5E16\u306B\u53C2\u52A0",
+    onClose: onCancel,
+    footer: busy ? React.createElement("p", {
+      className: "text-sm flex items-center gap-2 py-2"
+    }, React.createElement(Icon, {
+      name: "Loader",
+      size: 16,
+      className: "animate-spin"
+    }), busy) : React.createElement("div", {
+      className: "flex gap-2"
+    }, React.createElement("button", {
+      className: btnGhost + ' flex-1',
+      onClick: onCancel
+    }, "\u3084\u3081\u308B"), React.createElement("button", {
+      className: btnPrimary + ' flex-[2]',
+      onClick: join
+    }, React.createElement(Icon, {
+      name: "Users",
+      size: 18
+    }), "\u53C2\u52A0\u3059\u308B"))
+  }, React.createElement("div", {
+    className: "flex flex-col gap-3"
+  }, React.createElement("div", {
+    className: "w-14 h-14 rounded-2xl bg-primary text-pink flex items-center justify-center"
+  }, React.createElement(Icon, {
+    name: "Users",
+    size: 28
+  })), React.createElement("p", null, "\u62DB\u5F85\u30EA\u30F3\u30AF\u304B\u3089\u958B\u304D\u307E\u3057\u305F\u3002\u53C2\u52A0\u3059\u308B\u3068\u3001\u5BB6\u65CF\u306E\u30EC\u30B7\u30D4\u30FB1\u9031\u9593\u732E\u7ACB\u30FB\u8CB7\u3044\u7269\u30EA\u30B9\u30C8\u3092\u3053\u306E\u7AEF\u672B\u3067\u3082\u898B\u305F\u308A\u7DE8\u96C6\u3057\u305F\u308A\u3067\u304D\u307E\u3059\u3002"), mine.length > 0 && React.createElement("label", {
+    className: "flex items-start gap-2 text-sm rounded-xl bg-sunk p-3 cursor-pointer"
+  }, React.createElement("input", {
+    id: "include-mine",
+    type: "checkbox",
+    checked: includeMine,
+    onChange: e => setIncludeMine(e.target.checked),
+    className: "mt-1 w-4 h-4"
+  }), React.createElement("span", null, "\u3053\u306E\u7AEF\u672B\u306B\u4FDD\u5B58\u3057\u3066\u3044\u308B\u81EA\u5206\u306E\u30EC\u30B7\u30D4\uFF08", mine.length, "\u4EF6\uFF09\u3082\u5BB6\u65CF\u306E\u732E\u7ACB\u5E16\u306B\u8FFD\u52A0\u3059\u308B")), err && React.createElement("p", {
+    className: "rounded-xl bg-danger/10 text-danger text-sm p-3"
+  }, err)));
+}
+function Settings({
+  open,
+  onClose,
+  categories,
+  setCategories,
+  removeCategory,
+  exportData,
+  importData,
+  backend,
+  removeSamples,
+  hasSamples,
+  askConfirm,
+  toast,
+  localSnapshot
+}) {
+  const [nc, setNc] = useState('');
+  const [paste, setPaste] = useState('');
+  const [exportText, setExportText] = useState('');
+  const fileRef = useRef();
+  async function doExport() {
+    const r = await exportData();
+    if (r && r.fallbackText) setExportText(r.fallbackText);
+  }
+  function onFile(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const fr = new FileReader();
+    fr.onload = () => importData(String(fr.result));
+    fr.readAsText(file);
+    e.target.value = '';
+  }
+  const addC = () => {
+    if (nc.trim()) {
+      setCategories([...new Set([...categories, nc.trim()])]);
+      setNc('');
+    }
+  };
+  return React.createElement(Sheet, {
+    open: open,
+    onClose: onClose,
+    title: "\u8A2D\u5B9A\u30FB\u5171\u6709\u30FB\u30D0\u30C3\u30AF\u30A2\u30C3\u30D7"
+  }, React.createElement("div", {
+    className: "flex flex-col gap-7"
+  }, backend.kind === 'local' && !backend.ok && React.createElement("p", {
+    className: "rounded-xl bg-danger/10 text-danger text-sm p-3"
+  }, "\u3053\u306E\u30D6\u30E9\u30A6\u30B6\u3067\u306F\u4FDD\u5B58\u9818\u57DF\u304C\u4F7F\u3048\u306A\u3044\u305F\u3081\u3001\u30DA\u30FC\u30B8\u3092\u9589\u3058\u308B\u3068\u30C7\u30FC\u30BF\u304C\u6D88\u3048\u307E\u3059\u3002\u3053\u307E\u3081\u306B\u30D0\u30C3\u30AF\u30A2\u30C3\u30D7\u3057\u3066\u304F\u3060\u3055\u3044\u3002"), React.createElement(FamilySection, {
+    backend: backend,
+    toast: toast,
+    askConfirm: askConfirm,
+    localSnapshot: localSnapshot
+  }), React.createElement("section", {
+    className: "flex flex-col gap-3"
+  }, React.createElement("h3", {
+    className: "font-display font-bold flex items-center gap-2"
+  }, React.createElement(Icon, {
+    name: "Tags",
+    size: 18,
+    className: "text-primary"
+  }), "\u30AB\u30C6\u30B4\u30EA"), React.createElement("ul", {
+    className: "flex flex-wrap gap-2"
+  }, categories.map(c => React.createElement("li", {
+    key: c,
+    className: "inline-flex items-center gap-1 rounded-full border border-line bg-surface pl-3 pr-1.5 py-1 text-sm"
+  }, c, React.createElement("button", {
+    "aria-label": `${c}を削除`,
+    onClick: () => askConfirm({
+      title: `「${c}」を削除`,
+      body: 'レシピからもこのカテゴリが外れます。レシピ自体は残ります。',
+      onOk: () => removeCategory(c)
+    }),
+    className: "p-0.5 text-muted hover:text-danger"
+  }, React.createElement(Icon, {
+    name: "X",
+    size: 14
+  }))))), React.createElement("div", {
+    className: "flex gap-2"
+  }, React.createElement("input", {
+    id: "newcat",
+    value: nc,
+    onChange: e => setNc(e.target.value),
+    onKeyDown: e => {
+      if (e.key === 'Enter') addC();
+    },
+    className: field,
+    placeholder: "\u4F8B\uFF1A\u304A\u3064\u307E\u307F"
+  }), React.createElement("button", {
+    onClick: addC,
+    className: btnGhost + ' shrink-0'
+  }, React.createElement(Icon, {
+    name: "Plus",
+    size: 16
+  }), "\u8FFD\u52A0"))), React.createElement("section", {
+    className: "flex flex-col gap-3"
+  }, React.createElement("h3", {
+    className: "font-display font-bold flex items-center gap-2"
+  }, React.createElement(Icon, {
+    name: "HardDriveDownload",
+    size: 18,
+    className: "text-primary"
+  }), "\u30D0\u30C3\u30AF\u30A2\u30C3\u30D7"), React.createElement("p", {
+    className: "text-sm text-muted"
+  }, "\u30EC\u30B7\u30D4\uFF08\u5199\u771F\u8FBC\u307F\uFF09\u30FB\u30AB\u30C6\u30B4\u30EA\u30FB\u732E\u7ACB\u30FB\u8CB7\u3044\u7269\u30EA\u30B9\u30C8\u3092JSON\u30D5\u30A1\u30A4\u30EB\u306B\u4FDD\u5B58\u3057\u307E\u3059\u3002", backend.kind === 'cloud' ? '家族共有中も、念のため月に1回ほど保存しておくと安心です。' : '機種変更やブラウザのデータ削除の前に。'), React.createElement("button", {
+    onClick: doExport,
+    className: btnPrimary
+  }, React.createElement(Icon, {
+    name: "Download",
+    size: 18
+  }), "JSON\u3067\u66F8\u304D\u51FA\u3059"), exportText && React.createElement("div", {
+    className: "flex flex-col gap-2"
+  }, React.createElement("p", {
+    className: "text-xs text-muted"
+  }, "\u30D5\u30A1\u30A4\u30EB\u4FDD\u5B58\u304C\u3067\u304D\u306A\u304B\u3063\u305F\u305F\u3081\u3001\u5185\u5BB9\u3092\u8868\u793A\u3057\u3066\u3044\u307E\u3059\u3002\u30B3\u30D4\u30FC\u3057\u3066\u30E1\u30E2\u7B49\u306B\u4FDD\u5B58\u3057\u3066\u304F\u3060\u3055\u3044\u3002"), React.createElement("textarea", {
+    id: "export-text",
+    readOnly: true,
+    rows: 4,
+    value: exportText,
+    onFocus: e => e.target.select(),
+    className: field + ' text-xs font-mono'
+  }), React.createElement("button", {
+    className: btnGhost,
+    onClick: async () => {
+      try {
+        await navigator.clipboard.writeText(exportText);
+        toast('コピーしました');
+      } catch (e) {
+        const t = document.getElementById('export-text');
+        t && t.select();
+      }
+    }
+  }, React.createElement(Icon, {
+    name: "Copy",
+    size: 16
+  }), "\u30B3\u30D4\u30FC")), React.createElement("button", {
+    onClick: () => fileRef.current && fileRef.current.click(),
+    className: btnGhost
+  }, React.createElement(Icon, {
+    name: "Upload",
+    size: 18
+  }), "JSON\u30D5\u30A1\u30A4\u30EB\u304B\u3089\u5FA9\u5143"), React.createElement("input", {
+    ref: fileRef,
+    id: "import-file",
+    type: "file",
+    accept: "application/json,.json",
+    className: "hidden",
+    onChange: onFile
+  }), React.createElement("details", {
+    className: "text-sm"
+  }, React.createElement("summary", {
+    className: "cursor-pointer text-muted"
+  }, "\u8CBC\u308A\u4ED8\u3051\u3066\u5FA9\u5143\u3059\u308B"), React.createElement("div", {
+    className: "flex flex-col gap-2 mt-2"
+  }, React.createElement("textarea", {
+    id: "import-paste",
+    rows: 4,
+    value: paste,
+    onChange: e => setPaste(e.target.value),
+    className: field + ' text-xs font-mono',
+    placeholder: "{\"app\":\"kondate-cho\",...}"
+  }), React.createElement("button", {
+    className: btnGhost,
+    onClick: () => {
+      importData(paste);
+      setPaste('');
+    }
+  }, "\u3053\u306E\u5185\u5BB9\u3067\u5FA9\u5143"))), React.createElement("p", {
+    className: "text-xs text-muted"
+  }, "\u5FA9\u5143\u3059\u308B\u3068\u3001\u540C\u3058\u30EC\u30B7\u30D4\u306F\u4E0A\u66F8\u304D\u3001\u65B0\u3057\u3044\u30EC\u30B7\u30D4\u306F\u8FFD\u52A0\u3055\u308C\u307E\u3059\u3002", backend.kind === 'cloud' ? '家族共有中は家族全員のデータに反映されます。' : '')), hasSamples && React.createElement("section", {
+    className: "flex flex-col gap-2"
+  }, React.createElement("h3", {
+    className: "font-display font-bold"
+  }, "\u898B\u672C\u30EC\u30B7\u30D4"), React.createElement("p", {
+    className: "text-sm text-muted"
+  }, "\u6700\u521D\u306B\u5165\u3063\u3066\u3044\u308B\u300C\u898B\u672C\u300D\u30DE\u30FC\u30AF\u306E\u30EC\u30B7\u30D4\u3092\u307E\u3068\u3081\u3066\u6D88\u305B\u307E\u3059\u3002"), React.createElement("button", {
+    className: btnGhost,
+    onClick: () => askConfirm({
+      title: '見本レシピを削除',
+      body: '「見本」マークのついたレシピをすべて削除します。',
+      onOk: removeSamples
+    })
+  }, React.createElement(Icon, {
+    name: "Trash2",
+    size: 16
+  }), "\u898B\u672C\u3092\u3059\u3079\u3066\u524A\u9664")), React.createElement("p", {
+    className: "text-xs text-muted flex items-center gap-1.5"
+  }, React.createElement(Icon, {
+    name: "Database",
+    size: 14
+  }), "\u4FDD\u5B58\u5148\uFF1A", backend.kind === 'cloud' ? '家族共有（Firebase）＋この端末のキャッシュ' : backend.ok ? 'この端末のブラウザ（IndexedDB）' : '一時メモリ')));
+}
+function App() {
+  const backend = useMemo(() => {
+    const s = LS.get('share', null);
+    return s && s.cfg && s.code ? createCloudBackend(s.cfg, s.code) : createLocalBackend();
+  }, []);
+  const [ready, setReady] = useState(false);
+  const [cloudErr, setCloudErr] = useState('');
+  const [online, setOnline] = useState(navigator.onLine);
+  const [recipes, setRecipes] = useState([]);
+  const [meta, setMeta] = useState({});
+  const [shopRaw, setShopRaw] = useState([]);
+  const [tab, setTab] = useState(LS.get('tab', 'list'));
+  const [detail, setDetail] = useState(null);
+  const [editing, setEditing] = useState(null);
+  const [settings, setSettings] = useState(false);
+  const [confirm, setConfirm] = useState(null);
+  const [toastMsg, setToastMsg] = useState('');
+  const tRef = useRef();
+  const [invite, setInvite] = useState(() => parseInvite(location.hash));
+  const snapRef = useRef({
+    recipes: [],
+    meta: {},
+    shopping: []
+  });
+  const toast = useCallback(m => {
+    setToastMsg(m);
+    clearTimeout(tRef.current);
+    tRef.current = setTimeout(() => setToastMsg(''), 2800);
+  }, []);
+  const categories = meta.categories || DEFAULT_CATS;
+  const plan = meta.plan || {
+    mode: 'balanced',
+    fridge: [],
+    days: []
+  };
+  const offDays = meta.offDays || [];
+  const shopping = useMemo(() => [...shopRaw].sort((a, b) => (a.order || 0) - (b.order || 0)), [shopRaw]);
+  snapRef.current = {
+    recipes,
+    meta,
+    shopping
+  };
+  backend.snapshot = backend.snapshot || (() => snapRef.current);
+  const wr = (p, msg = '保存できませんでした。容量や通信を確認してください。') => Promise.resolve(p).catch(e => {
+    console.error(e);
+    toast(backend.kind === 'cloud' ? fbErrorText(e) : msg);
+  });
+  useEffect(() => {
+    const on = () => setOnline(true),
+      off = () => setOnline(false);
+    addEventListener('online', on);
+    addEventListener('offline', off);
+    return () => {
+      removeEventListener('online', on);
+      removeEventListener('offline', off);
+    };
+  }, []);
+  useEffect(() => {
+    let stop = () => {};
+    let alive = true;
+    const h = {
+      recipes: setRecipes,
+      meta: setMeta,
+      shopping: setShopRaw,
+      error: e => {
+        console.error(e);
+        setCloudErr(fbErrorText(e));
+        setReady(true);
+      },
+      ready: () => setReady(true)
+    };
+    (async () => {
+      try {
+        stop = await backend.start(h);
+      } catch (e) {
+        h.error(e);
+        return;
+      }
+      if (backend.kind === 'local') {
+        const s = backend.snapshot();
+        if (!s.meta.seeded && s.recipes.length === 0) {
+          for (const r of SAMPLES) await backend.putRecipe(r);
+          await backend.setMeta('seeded', true);
+          await backend.setMeta('offDays', [6]);
+          const p = {
+            mode: 'balanced',
+            fridge: [],
+            days: spread(planBalanced(SAMPLES, '', 6, true), [6]),
+            weekStart: nextMonday(),
+            createdAt: Date.now()
+          };
+          await backend.setMeta('plan', p);
+          await backend.shopReplace(buildShopping(p, SAMPLES, []));
+        }
+        setReady(true);
+      } else {
+        setTimeout(() => alive && setReady(true), 4000);
+        if (LS.get('justCreated', false)) {
+          LS.del('justCreated');
+          setSettings(true);
+          toast('家族の献立帖ができました。家族を招待しましょう');
+        }
+      }
+    })();
+    return () => {
+      alive = false;
+      stop && stop();
+    };
+  }, []);
+  const setCategories = c => wr(backend.setMeta('categories', c));
+  const setPlan = p => {
+    setMeta(m => ({
+      ...m,
+      plan: p
+    }));
+    wr(backend.setMeta('plan', p));
+  };
+  const setOffDays = o => {
+    setMeta(m => ({
+      ...m,
+      offDays: o
+    }));
+    wr(backend.setMeta('offDays', o));
+  };
+  function setShopping(next) {
+    const base = Date.now();
+    next = next.map((it, i) => ({
+      ...it,
+      order: it.order != null ? it.order : base + i
+    }));
+    if (backend.kind === 'local') {
+      wr(backend.shopReplace(next));
+      return;
+    }
+    setShopRaw(next);
+    const prev = new Map(shopRaw.map(i => [i.id, i]));
+    const ids = new Set(next.map(i => i.id));
+    const removed = shopRaw.filter(i => !ids.has(i.id)).map(i => i.id);
+    if (removed.length) wr(backend.shopDel(removed));
+    next.forEach(i => {
+      const p = prev.get(i.id);
+      if (!p || JSON.stringify(p) !== JSON.stringify(i)) wr(backend.shopSet(i));
+    });
+  }
+  const go = t => {
+    setTab(t);
+    window.scrollTo({
+      top: 0
+    });
+    LS.set('tab', t);
+  };
+  async function saveRecipe(f) {
+    const prev = recipes.find(r => r.id === f.id);
+    const r = {
+      ...prev,
+      ...f,
+      id: f.id || uid(),
+      createdAt: prev ? prev.createdAt : Date.now(),
+      updatedAt: Date.now()
+    };
+    delete r.kcalEstimated;
+    if (prev && prev.sample) delete r.sample;
+    if (backend.kind === 'cloud' && r.photo && r.photo.length > 900000) {
+      toast('写真が大きすぎます。別の写真を選んでください');
+      return;
+    }
+    wr(backend.putRecipe(r));
+    setEditing(null);
+    toast(prev ? '変更を保存しました' : 'レシピを保存しました');
+    go('list');
+    setDetail(r);
+  }
+  function deleteRecipe(r) {
+    setConfirm({
+      title: `「${r.name}」を削除`,
+      body: backend.kind === 'cloud' ? '家族全員の献立帖から削除されます。元に戻せません。' : 'このレシピを削除します。元に戻せません（バックアップがあれば復元できます）。',
+      onOk: () => {
+        wr(backend.delRecipe(r.id));
+        setDetail(null);
+        toast('削除しました');
+      }
+    });
+  }
+  function toggleFav(r) {
+    const n = {
+      ...r,
+      fav: !r.fav
+    };
+    wr(backend.putRecipe(n));
+    toast(n.fav ? 'お気に入りに追加しました' : 'お気に入りから外しました');
+  }
+  function addCategory(c) {
+    if (!categories.includes(c)) setCategories([...categories, c]);
+  }
+  function removeCategory(c) {
+    setCategories(categories.filter(x => x !== c));
+    recipes.filter(r => (r.categories || []).includes(c)).forEach(r => wr(backend.putRecipe({
+      ...r,
+      categories: r.categories.filter(x => x !== c)
+    })));
+  }
+  function removeSamples() {
+    recipes.filter(r => r.sample).forEach(r => wr(backend.delRecipe(r.id)));
+    toast('見本を削除しました');
+  }
+  function saveGeneric(g) {
+    const f = {
+      ...emptyForm(),
+      name: g.name,
+      ingredients: g.ingredients.map(i => ({
+        ...i
+      })),
+      steps: [...g.steps],
+      kcal: String(g.kcal),
+      categories: g.categories.filter(c => categories.includes(c))
+    };
+    setDetail(null);
+    setEditing(f);
+    go('new');
+  }
+  async function exportData() {
+    const data = {
+      app: 'kondate-cho',
+      version: 2,
+      exportedAt: new Date().toISOString(),
+      recipes,
+      categories,
+      plan,
+      shopping,
+      offDays
+    };
+    const json = JSON.stringify(data);
+    const d = new Date();
+    const fn = `kondate-backup-${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}.json`;
+    try {
+      const file = new File([json], fn, {
+        type: 'application/json'
+      });
+      if (navigator.canShare && navigator.canShare({
+        files: [file]
+      }) && /iPhone|iPad|Android/i.test(navigator.userAgent)) {
+        await navigator.share({
+          files: [file],
+          title: '献立帖のバックアップ'
+        });
+        return {};
+      }
+    } catch (e) {
+      if (e && e.name === 'AbortError') return {};
+    }
+    try {
+      downloadText(fn, json);
+      toast('バックアップを保存しました');
+      return {};
+    } catch (e) {
+      return {
+        fallbackText: json
+      };
+    }
+  }
+  function importData(text) {
+    let d;
+    try {
+      d = JSON.parse(text);
+    } catch (e) {
+      toast('JSONとして読めませんでした。ファイルを確認してください。');
+      return;
+    }
+    if (!d || !Array.isArray(d.recipes)) {
+      toast('献立帖のバックアップではないようです');
+      return;
+    }
+    let n = 0;
+    for (const r of d.recipes) {
+      if (!r || !r.id || !r.name) continue;
+      wr(backend.putRecipe(r));
+      n++;
+    }
+    if (Array.isArray(d.categories)) setCategories([...new Set([...categories, ...d.categories])]);
+    if (d.plan && Array.isArray(d.plan.days)) setPlan(d.plan);
+    if (Array.isArray(d.shopping)) setShopping(d.shopping);
+    if (Array.isArray(d.offDays)) setOffDays(d.offDays);
+    toast(`${n}件のレシピを復元しました`);
+    setSettings(false);
+  }
+  function makeList() {
+    setShopping(buildShopping(plan, recipes, shopping).map(i => ({
+      ...i,
+      order: undefined
+    })));
+    toast('買い物リストを作りました');
+    go('shop');
+  }
+  const detailObj = detail && !detail.generic ? recipes.find(r => r.id === detail.id) || null : detail;
+  const shopLeft = shopping.filter(i => !i.checked).length;
+  const TABS = [['list', 'BookOpen', 'レシピ'], ['new', 'PlusCircle', '登録'], ['plan', 'CalendarDays', '献立'], ['shop', 'ShoppingCart', '買い物']];
+  const titles = {
+    list: 'レシピ一覧',
+    new: editing && editing.id ? 'レシピを編集' : '新規登録',
+    plan: '1週間献立',
+    shop: '買い物リスト'
+  };
+  if (!ready) return React.createElement("div", {
+    className: "boot"
+  }, "\u732E\u7ACB\u5E16\u3092\u3072\u3089\u3044\u3066\u3044\u307E\u3059\u2026");
+  return React.createElement("div", {
+    className: "min-h-full"
+  }, React.createElement("header", {
+    className: "sticky z-30 bg-bg/95 backdrop-blur border-b border-line",
+    style: {
+      top: 'env(safe-area-inset-top,0px)'
+    }
+  }, React.createElement("div", {
+    className: "gutter max-w-md mx-auto flex items-center justify-between py-3"
+  }, React.createElement("div", {
+    className: "flex items-center gap-2.5 min-w-0"
+  }, React.createElement("span", {
+    className: "w-9 h-9 rounded-full bg-primary text-pink flex items-center justify-center shrink-0"
+  }, React.createElement(Icon, {
+    name: "ChefHat",
+    size: 20
+  })), React.createElement("div", {
+    className: "leading-tight min-w-0"
+  }, React.createElement("p", {
+    className: "text-[10px] text-muted label flex items-center gap-1"
+  }, backend.kind === 'cloud' ? React.createElement(React.Fragment, null, React.createElement(Icon, {
+    name: online ? 'Users' : 'CloudOff',
+    size: 11
+  }), online ? '家族で共有中' : 'オフライン・後で同期') : 'MY KITCHEN NOTE'), React.createElement("h1", {
+    className: "font-display text-lg font-black truncate"
+  }, titles[tab]))), React.createElement("button", {
+    onClick: () => setSettings(true),
+    className: "p-2.5 rounded-full hover:bg-sunk",
+    "aria-label": "\u8A2D\u5B9A\u30FB\u5171\u6709\u30FB\u30D0\u30C3\u30AF\u30A2\u30C3\u30D7"
+  }, React.createElement(Icon, {
+    name: "Settings",
+    size: 20
+  })))), cloudErr && React.createElement("div", {
+    className: "gutter max-w-md mx-auto pt-3"
+  }, React.createElement("div", {
+    className: "rounded-xl bg-danger/10 text-danger text-sm p-3 flex flex-col gap-2"
+  }, React.createElement("p", null, cloudErr), React.createElement("div", {
+    className: "flex gap-2"
+  }, React.createElement("button", {
+    className: "underline",
+    onClick: () => location.reload()
+  }, "\u518D\u8AAD\u307F\u8FBC\u307F"), React.createElement("button", {
+    className: "underline",
+    onClick: () => setConfirm({
+      title: '端末内モードに戻す',
+      ok: '戻す',
+      body: 'この端末の共有設定を外して「端末内のみ」に戻します。家族側のデータは消えません。',
+      onOk: () => {
+        LS.del('share');
+        location.reload();
+      }
+    })
+  }, "\u7AEF\u672B\u5185\u30E2\u30FC\u30C9\u306B\u623B\u3059")))), React.createElement("main", {
+    className: "gutter max-w-md mx-auto pt-4",
+    style: {
+      paddingBottom: 'calc(96px + env(safe-area-inset-bottom,0px))'
+    }
+  }, tab === 'list' && React.createElement(RecipeList, {
+    recipes: recipes,
+    categories: categories,
+    onOpen: setDetail,
+    onFav: toggleFav,
+    goNew: () => {
+      setEditing(null);
+      go('new');
+    }
+  }), tab === 'new' && React.createElement(RecipeForm, {
+    initial: editing,
+    categories: categories,
+    onAddCategory: addCategory,
+    onSave: saveRecipe,
+    onCancel: editing ? () => {
+      setEditing(null);
+      go('list');
+    } : null,
+    toast: toast
+  }), tab === 'plan' && React.createElement(WeekPlan, {
+    plan: plan,
+    setPlan: setPlan,
+    recipes: recipes,
+    categories: categories,
+    onOpen: setDetail,
+    onMakeList: makeList,
+    offDays: offDays,
+    setOffDays: setOffDays
+  }), tab === 'shop' && React.createElement(Shopping, {
+    items: shopping,
+    setItems: setShopping,
+    hasPlan: !!(plan.days && plan.days.length),
+    goPlan: () => go('plan'),
+    toast: toast
+  })), React.createElement("nav", {
+    className: "fixed bottom-0 inset-x-0 z-40 bg-surface/95 backdrop-blur border-t border-line",
+    style: {
+      paddingBottom: 'env(safe-area-inset-bottom,0px)'
+    },
+    "aria-label": "\u30E1\u30A4\u30F3"
+  }, React.createElement("div", {
+    className: "gutter max-w-md mx-auto grid grid-cols-4"
+  }, TABS.map(([k, ic, l]) => React.createElement("button", {
+    key: k,
+    onClick: () => {
+      if (k === 'new' && tab !== 'new') setEditing(null);
+      go(k);
+    },
+    "aria-current": tab === k ? 'page' : undefined,
+    className: `relative flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-bold ${tab === k ? 'text-primary' : 'text-muted'}`
+  }, React.createElement("span", {
+    className: `px-4 py-1 rounded-full ${tab === k ? 'bg-primary/10' : ''}`
+  }, React.createElement(Icon, {
+    name: ic,
+    size: 22
+  })), l, k === 'shop' && shopLeft > 0 && React.createElement("span", {
+    className: "absolute top-1.5 right-[22%] min-w-[18px] h-[18px] px-1 rounded-full bg-honey text-pink text-[10px] flex items-center justify-center tnum"
+  }, shopLeft))))), toastMsg && React.createElement("div", {
+    className: "fixed inset-x-0 z-[60] flex justify-center gutter pointer-events-none",
+    style: {
+      bottom: 'calc(84px + env(safe-area-inset-bottom,0px))'
+    }
+  }, React.createElement("div", {
+    className: "rounded-2xl bg-ink text-bg text-sm px-4 py-2 shadow-lg max-w-md"
+  }, toastMsg)), React.createElement(RecipeDetail, {
+    recipe: detailObj,
+    onClose: () => setDetail(null),
+    onEdit: r => {
+      setDetail(null);
+      setEditing({
+        ...emptyForm(),
+        ...r,
+        kcal: r.kcal ? String(r.kcal) : '',
+        ingredients: r.ingredients && r.ingredients.length ? r.ingredients : [{
+          name: '',
+          amount: ''
+        }],
+        steps: r.steps && r.steps.length ? r.steps : ['']
+      });
+      go('new');
+    },
+    onDelete: deleteRecipe,
+    onSaveGeneric: saveGeneric,
+    onFav: toggleFav
+  }), React.createElement(Settings, {
+    open: settings,
+    onClose: () => setSettings(false),
+    categories: categories,
+    setCategories: setCategories,
+    removeCategory: removeCategory,
+    exportData: exportData,
+    importData: importData,
+    backend: backend,
+    removeSamples: removeSamples,
+    hasSamples: recipes.some(r => r.sample),
+    askConfirm: setConfirm,
+    toast: toast,
+    localSnapshot: () => snapRef.current
+  }), invite && !(backend.kind === 'cloud' && LS.get('share', {}).code === invite.code) && React.createElement(JoinSheet, {
+    invite: invite,
+    localSnapshot: () => snapRef.current,
+    onCancel: () => {
+      setInvite(null);
+      history.replaceState(null, '', location.pathname + location.search);
+    }
+  }), invite && backend.kind === 'cloud' && LS.get('share', {}).code === invite.code && (history.replaceState(null, '', location.pathname + location.search), null), React.createElement(Confirm, {
+    state: confirm,
+    onCancel: () => setConfirm(null)
+  }));
+}
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App, null));
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}

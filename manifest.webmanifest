@@ -1,0 +1,17 @@
+{
+  "name": "わたしの献立帖",
+  "short_name": "献立帖",
+  "description": "レシピ・1週間献立・買い物リストを家族で共有できる献立アプリ",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f5eee4",
+  "theme_color": "#f5eee4",
+  "icons": [
+    {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
