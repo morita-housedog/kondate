@@ -536,6 +536,21 @@ const LUCIDE = {
     "d": "M18 6 6 18"
   }], ["path", {
     "d": "m6 6 12 12"
+  }]],
+  "ScanText": [["path", {
+    "d": "M3 7V5a2 2 0 0 1 2-2h2"
+  }], ["path", {
+    "d": "M17 3h2a2 2 0 0 1 2 2v2"
+  }], ["path", {
+    "d": "M21 17v2a2 2 0 0 1-2 2h-2"
+  }], ["path", {
+    "d": "M7 21H5a2 2 0 0 1-2-2v-2"
+  }], ["path", {
+    "d": "M7 8h8"
+  }], ["path", {
+    "d": "M7 12h10"
+  }], ["path", {
+    "d": "M7 16h6"
   }]]
 };
 function Icon({
@@ -1298,7 +1313,11 @@ function parseCaption(text, categories) {
       continue;
     }
     if (mode === 'step') {
-      if (STEP_NUM.test(L) || !res.steps.length) res.steps.push(L.replace(STEP_NUM, '').trim());else res.steps[res.steps.length - 1] += ' ' + L;
+      if (L.length < 24 && /kcal|カロリー|^\d+人分/i.test(L)) continue;
+      if (STEP_NUM.test(L) || !res.steps.length) res.steps.push(L.replace(STEP_NUM, '').trim());else {
+        const prev = res.steps[res.steps.length - 1];
+        res.steps[res.steps.length - 1] = prev + (/[\u3040-\u9fff]$/.test(prev) && /^[\u3040-\u9fff。、]/.test(L) ? '' : ' ') + L;
+      }
       continue;
     }
     if (!sawHeader) {
@@ -1357,6 +1376,93 @@ function compressImage(file, max = 800) {
     };
     fr.readAsDataURL(file);
   });
+}
+let tessLoading = null;
+function loadTesseract() {
+  if (window.Tesseract) return Promise.resolve();
+  if (!tessLoading) tessLoading = new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = 'vendor/tesseract/tesseract.min.js';
+    s.onload = () => res();
+    s.onerror = () => {
+      tessLoading = null;
+      rej(new Error('load'));
+    };
+    document.head.appendChild(s);
+  });
+  return tessLoading;
+}
+async function prepImage(file) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((res, rej) => {
+      const i = new Image();
+      i.onload = () => res(i);
+      i.onerror = () => rej(new Error('image'));
+      i.src = url;
+    });
+    const scale = Math.min(2, Math.max(1, 1400 / img.width));
+    const c = document.createElement('canvas');
+    c.width = Math.round(img.width * scale);
+    c.height = Math.round(img.height * scale);
+    const g = c.getContext('2d', {
+      willReadFrequently: true
+    });
+    g.drawImage(img, 0, 0, c.width, c.height);
+    const d = g.getImageData(0, 0, c.width, c.height);
+    const p = d.data;
+    let sum = 0;
+    for (let i = 0; i < p.length; i += 4) {
+      const l = .299 * p[i] + .587 * p[i + 1] + .114 * p[i + 2];
+      p[i] = p[i + 1] = p[i + 2] = l;
+      sum += l;
+    }
+    if (sum / (p.length / 4) < 110) for (let i = 0; i < p.length; i += 4) {
+      p[i] = p[i + 1] = p[i + 2] = 255 - p[i];
+    }
+    g.putImageData(d, 0, 0);
+    return c;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+const CJK = '\\u3000-\\u30ff\\u3400-\\u9fff\\uf900-\\ufaff\\uff00-\\uffef';
+const OCR_JUNK = [/^\d{1,2}[:：]\d{2}/, /いいね/, /件のコメント|コメント\s*\d|をすべて見る|コメントを追加/, /^返信/, /フォロー/, /翻訳を見る/, /続きを読む/, /^\d+\s*(秒|分|時間|日|週間)前/, /^(その他|もっと見る|オリジナル音源)$/, /^[•·.…\-_|ー\s]+$/, /^[^\u3040-\u9fff\uff10-\uff19]{1,2}$/, /^@?[a-z0-9._]{3,30}$/i];
+function cleanOcr(t) {
+  return (t || '').split('\n').map(l => l.replace(new RegExp('([' + CJK + '])[ \\t]+(?=[' + CJK + '])', 'g'), '$1').replace(/[ \t]{2,}/g, ' ').trim().replace(/^[\(（\[「|｜]\s*(?=[①-⑳❶-❿])/, '')).filter(l => l && !OCR_JUNK.some(r => r.test(l)));
+}
+async function ocrImages(files, onProg) {
+  await loadTesseract();
+  let cur = 1;
+  const worker = await Tesseract.createWorker('jpn', 1, {
+    workerPath: 'vendor/tesseract/worker.min.js',
+    corePath: 'vendor/tesseract/',
+    langPath: 'vendor/tesseract/lang',
+    logger: m => {
+      if (m.status === 'recognizing text') onProg(cur, Math.round((m.progress || 0) * 100), '読み取り中');else onProg(cur, Math.round((m.progress || 0) * 100), '準備中');
+    }
+  });
+  const lines = [];
+  try {
+    await worker.setParameters({
+      preserve_interword_spaces: '1'
+    });
+    for (let i = 0; i < files.length; i++) {
+      cur = i + 1;
+      const c = await prepImage(files[i]);
+      const {
+        data
+      } = await worker.recognize(c);
+      const tail = lines.slice(-12);
+      for (const l of cleanOcr(data.text)) {
+        if (i > 0 && tail.includes(l)) continue;
+        lines.push(l);
+      }
+    }
+  } finally {
+    await worker.terminate();
+  }
+  return lines.join('\n');
 }
 const I = s => s.split('|').map(x => {
   const [n, a] = x.split(':');
@@ -2045,6 +2151,8 @@ function RecipeForm({
 }) {
   const [f, setF] = useState(initial || emptyForm());
   const [caption, setCaption] = useState('');
+  const [ocr, setOcr] = useState(null);
+  const shotRef = useRef();
   const [newCat, setNewCat] = useState('');
   const [busy, setBusy] = useState(false);
   const fileRef = useRef();
@@ -2086,6 +2194,34 @@ function RecipeForm({
     } finally {
       setBusy(false);
       e.target.value = '';
+    }
+  }
+  async function onShots(e) {
+    const files = [...(e.target.files || [])];
+    e.target.value = '';
+    if (!files.length) return;
+    setOcr({
+      i: 1,
+      n: files.length,
+      p: 0,
+      stage: '準備中'
+    });
+    try {
+      const text = await ocrImages(files, (i, p, stage) => setOcr({
+        i,
+        n: files.length,
+        p,
+        stage
+      }));
+      if (!text.trim()) toast('文字を読み取れませんでした。キャプション部分を大きく写したスクショで試してください');else {
+        setCaption(c => (c.trim() ? c.trim() + '\n' : '') + text);
+        toast('読み取りました。おかしな行を直してから「自動入力」を押してください');
+      }
+    } catch (err) {
+      console.error(err);
+      toast(navigator.onLine ? '読み取りに失敗しました。もう一度お試しください' : '読み取りの準備には、最初の1回だけインターネット接続が必要です');
+    } finally {
+      setOcr(null);
     }
   }
   function autofill() {
@@ -2225,7 +2361,46 @@ function RecipeForm({
     name: "Sparkles",
     size: 18,
     className: "text-honey"
-  }), "\u30A4\u30F3\u30B9\u30BF\u6295\u7A3F\u6587\u304B\u3089\u81EA\u52D5\u5165\u529B"), React.createElement("textarea", {
+  }), "\u30A4\u30F3\u30B9\u30BF\u6295\u7A3F\u304B\u3089\u81EA\u52D5\u5165\u529B"), React.createElement("button", {
+    type: "button",
+    disabled: !!ocr,
+    onClick: () => shotRef.current && shotRef.current.click(),
+    className: btnGhost + ' w-full justify-center disabled:opacity-60'
+  }, React.createElement(Icon, {
+    name: "ScanText",
+    size: 18
+  }), "\u30B9\u30AF\u30B7\u30E7\u304B\u3089\u8AAD\u307F\u53D6\u308B"), React.createElement("input", {
+    ref: shotRef,
+    id: "shots",
+    type: "file",
+    accept: "image/*",
+    multiple: true,
+    className: "hidden",
+    onChange: onShots
+  }), ocr ? React.createElement("div", {
+    className: "rounded-xl bg-surface border border-line p-3 flex flex-col gap-2",
+    role: "status",
+    "aria-live": "polite"
+  }, React.createElement("p", {
+    className: "text-sm flex items-center gap-2"
+  }, React.createElement(Icon, {
+    name: "Loader",
+    size: 16,
+    className: "animate-spin"
+  }), ocr.n > 1 ? `${ocr.i}/${ocr.n}枚目を` : '', ocr.stage, "\u2026 ", React.createElement("span", {
+    className: "tnum text-muted"
+  }, ocr.p, "%")), React.createElement("div", {
+    className: "h-1.5 rounded-full bg-sunk overflow-hidden"
+  }, React.createElement("div", {
+    className: "h-full bg-honey transition-all",
+    style: {
+      width: `${ocr.p}%`
+    }
+  })), ocr.stage === '準備中' && React.createElement("p", {
+    className: "text-xs text-muted"
+  }, "\u521D\u56DE\u306F\u8AAD\u307F\u53D6\u308A\u7528\u30C7\u30FC\u30BF\uFF08\u7D0410MB\uFF09\u3092\u6E96\u5099\u3059\u308B\u305F\u3081\u3001\u5C11\u3057\u6642\u9593\u304C\u304B\u304B\u308A\u307E\u3059\u3002")) : React.createElement("p", {
+    className: "text-xs text-muted"
+  }, "\u30A4\u30F3\u30B9\u30BF\u306E\u30AD\u30E3\u30D7\u30B7\u30E7\u30F3\u3092\u300C\u7D9A\u304D\u3092\u8AAD\u3080\u300D\u3067\u5168\u90E8\u8868\u793A\u3057\u3066\u30B9\u30AF\u30B7\u30E7\u3002\u9577\u3044\u5834\u5408\u306F\u8907\u6570\u679A\u307E\u3068\u3081\u3066\u9078\u3079\u307E\u3059\u3002\u753B\u50CF\u306F\u3053\u306E\u30B9\u30DE\u30DB\u306E\u4E2D\u3060\u3051\u3067\u51E6\u7406\u3055\u308C\u307E\u3059\u3002"), React.createElement("textarea", {
     id: "caption",
     rows: 4,
     value: caption,
@@ -2235,6 +2410,7 @@ function RecipeForm({
   }), React.createElement("button", {
     type: "button",
     onClick: autofill,
+    disabled: !!ocr,
     className: btnPrimary
   }, React.createElement(Icon, {
     name: "Wand2",
