@@ -653,6 +653,37 @@ const LUCIDE = {
     "x2": "12",
     "y1": "4",
     "y2": "20"
+  }]],
+  "Info": [["circle", {
+    "cx": "12",
+    "cy": "12",
+    "r": "10"
+  }], ["path", {
+    "d": "M12 16v-4"
+  }], ["path", {
+    "d": "M12 8h.01"
+  }]],
+  "ChevronLeft": [["path", {
+    "d": "m15 18-6-6 6-6"
+  }]],
+  "ChevronUp": [["path", {
+    "d": "m18 15-6-6-6 6"
+  }]],
+  "ChevronDown": [["path", {
+    "d": "m6 9 6 6 6-6"
+  }]],
+  "NotebookPen": [["path", {
+    "d": "M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4"
+  }], ["path", {
+    "d": "M2 6h4"
+  }], ["path", {
+    "d": "M2 10h4"
+  }], ["path", {
+    "d": "M2 14h4"
+  }], ["path", {
+    "d": "M2 18h4"
+  }], ["path", {
+    "d": "M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"
   }]]
 };
 function Icon({
@@ -1897,6 +1928,16 @@ const dateKey = t => {
   const d = new Date(t);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
+const mondayOf = t => {
+  const d = new Date(t);
+  d.setDate(d.getDate() - (d.getDay() + 6) % 7);
+  return startOfDay(d);
+};
+const planFor = (plans, t) => plans && plans[dateKey(mondayOf(t))] || null;
+function weekLabel(ws) {
+  const n = Math.round((startOfDay(ws) - thisMonday()) / (7 * 864e5));
+  return n === 0 ? '今週' : n === 1 ? '来週' : n === -1 ? '先週' : n === 2 ? '再来週' : n > 0 ? `${n}週間後` : `${-n}週間前`;
+}
 const planDayIndex = (plan, t) => {
   if (!plan || !plan.weekStart) return -1;
   const i = Math.round((startOfDay(t) - startOfDay(plan.weekStart)) / 864e5);
@@ -3498,6 +3539,9 @@ function SlotPicker({
   }, "\u300C", none.join('」「'), "\u300D\u306E\u30EC\u30B7\u30D4\u304C\u306A\u3044\u305F\u3081\u7A7A\u6B04\u306B\u306A\u308A\u307E\u3059\u3002\u30EC\u30B7\u30D4\u306B\u305D\u306E\u30AB\u30C6\u30B4\u30EA\u3092\u4ED8\u3051\u308B\u3068\u9078\u3070\u308C\u307E\u3059\u3002"));
 }
 function WeekPlan({
+  weekStart,
+  setWeekStart,
+  plans,
   plan,
   setPlan,
   recipes,
@@ -3516,7 +3560,6 @@ function WeekPlan({
   const [fridgeIn, setFridgeIn] = useState('');
   const [fridge, setFridge] = useState(plan.fridge || []);
   const [favBoost, setFavBoost] = useState(true);
-  const [week, setWeek] = useState(() => (new Date().getDay() + 6) % 7 >= 4 ? 'next' : 'this');
   const [pick, setPick] = useState(null);
   function addFridge() {
     const parts = fridgeIn.split(/[、,，\s　]+/).map(s => s.trim()).filter(Boolean);
@@ -3538,7 +3581,7 @@ function WeekPlan({
         favBoost,
         off: offDays
       }),
-      weekStart: week === 'this' ? thisMonday() : nextMonday(),
+      weekStart,
       createdAt: Date.now()
     });
   }
@@ -3596,7 +3639,7 @@ function WeekPlan({
       items: item >= 0 ? d.items.map((x, i) => i === item ? it : x) : [...d.items, it]
     });
   }
-  const ws = plan.weekStart || null;
+  const ws = plan.weekStart || weekStart;
   const dateOf = i => ws ? fmtMD(ws + i * 864e5) : '';
   const todayIdx = planDayIndex(plan, Date.now());
   const cooking = days.filter(d => !d.off);
@@ -3605,9 +3648,47 @@ function WeekPlan({
   }) => a + (r && r.kcal || 0), 0), 0);
   const pd = pick ? days[pick.day] : null;
   const pItem = pick && pick.item >= 0 && pd && !pd.off ? pd.items[pick.item] : null;
+  const shift = n => setWeekStart(startOfDay(weekStart + n * 7 * 864e5 + 3 * 3600e3));
+  const off = Math.round((weekStart - thisMonday()) / (7 * 864e5));
   return React.createElement("div", {
     className: "flex flex-col gap-5"
   }, React.createElement("div", {
+    className: "ticket rounded-2xl flex items-center gap-1 p-1.5"
+  }, React.createElement("button", {
+    onClick: () => shift(-1),
+    disabled: off <= -4,
+    "aria-label": "\u524D\u306E\u9031",
+    className: "p-2.5 rounded-xl hover:bg-sunk disabled:opacity-30"
+  }, React.createElement(Icon, {
+    name: "ChevronLeft",
+    size: 20
+  })), React.createElement("div", {
+    className: "flex-1 text-center"
+  }, React.createElement("p", {
+    className: "font-display text-lg font-bold leading-tight"
+  }, weekLabel(weekStart), "\u306E\u732E\u7ACB"), React.createElement("p", {
+    className: "text-xs text-muted tnum"
+  }, fmtMD(weekStart), "\uFF08\u6708\uFF09\u301C", fmtMD(weekStart + 6 * 864e5), "\uFF08\u65E5\uFF09\u30FB", plans[dateKey(weekStart)] ? '作成済み' : 'まだありません')), React.createElement("button", {
+    onClick: () => shift(1),
+    disabled: off >= 4,
+    "aria-label": "\u6B21\u306E\u9031",
+    className: "p-2.5 rounded-xl hover:bg-sunk disabled:opacity-30"
+  }, React.createElement(Icon, {
+    name: "ChevronRight",
+    size: 20
+  }))), React.createElement("div", {
+    className: "flex justify-center gap-1.5 -mt-3"
+  }, [-1, 0, 1, 2].map(n => {
+    const w = thisMonday() + n * 7 * 864e5;
+    const has = !!plans[dateKey(w)];
+    return React.createElement("button", {
+      key: n,
+      onClick: () => setWeekStart(w),
+      className: `rounded-full px-2.5 py-0.5 text-[11px] font-bold border ${off === n ? 'bg-primary text-pink border-primary' : 'bg-surface border-line text-muted'}`
+    }, weekLabel(w), has && React.createElement("span", {
+      className: "ml-1"
+    }, "\u25CF"));
+  })), React.createElement("div", {
     className: "grid grid-cols-2 gap-1 p-1 rounded-2xl bg-sunk"
   }, [['fridge', 'Refrigerator', '食材から提案'], ['balanced', 'Shuffle', '献立から買い物']].map(([m, ic, l]) => React.createElement("button", {
     key: m,
@@ -3696,27 +3777,20 @@ function WeekPlan({
     }, d, on && React.createElement("span", {
       className: "text-[9px] font-medium leading-none mt-0.5"
     }, "\u4F11"));
-  }))), React.createElement("div", {
-    className: "flex flex-col gap-1.5"
-  }, React.createElement("span", {
-    className: "text-xs font-bold text-muted label flex items-center gap-1"
+  }))), days.length > 0 && React.createElement("p", {
+    className: "text-xs text-muted flex items-start gap-1"
   }, React.createElement(Icon, {
-    name: "CalendarDays",
-    size: 13
-  }), "\u3044\u3064\u306E\u732E\u7ACB\uFF1F"), React.createElement("div", {
-    className: "grid grid-cols-2 gap-2"
-  }, [['this', '今週', thisMonday()], ['next', '来週', nextMonday()]].map(([k, l, t]) => React.createElement(Chip, {
-    key: k,
-    active: week === k,
-    onClick: () => setWeek(k)
-  }, l, "\uFF08", fmtMD(t), "\u301C", fmtMD(t + 6 * 864e5), "\uFF09")))), React.createElement("button", {
+    name: "Info",
+    size: 13,
+    className: "mt-0.5"
+  }), weekLabel(weekStart), "\u306E\u732E\u7ACB\u3060\u3051\u3092\u4F5C\u308A\u76F4\u3057\u307E\u3059\u3002\u307B\u304B\u306E\u9031\u306E\u732E\u7ACB\u306F\u305D\u306E\u307E\u307E\u6B8B\u308A\u307E\u3059\u3002"), React.createElement("button", {
     onClick: generate,
     disabled: mode === 'fridge' && !fridge.length || cookN === 0,
     className: btnPrimary
   }, React.createElement(Icon, {
     name: "Sparkles",
     size: 18
-  }), "1\u9031\u9593\u306E\u732E\u7ACB\u3092\u3064\u304F\u308B")), days.length > 0 && React.createElement("section", {
+  }), weekLabel(weekStart), "\uFF08", fmtMD(weekStart), "\u301C\uFF09\u306E\u732E\u7ACB\u3092\u3064\u304F\u308B")), days.length > 0 && React.createElement("section", {
     className: "flex flex-col gap-3"
   }, React.createElement("div", {
     className: "flex items-end justify-between gap-2"
@@ -3858,7 +3932,7 @@ function WeekPlan({
   }));
 }
 function TodayView({
-  plan,
+  plans,
   recipes,
   notes,
   onOpen,
@@ -3869,13 +3943,15 @@ function TodayView({
   const now = Date.now();
   const t = new Date(now);
   const key = dateKey(now);
+  const plan = planFor(plans, now);
   const idx = planDayIndex(plan, now);
   const d = idx >= 0 ? normDay(plan.days[idx]) : null;
   const list = d && !d.off ? dayItems(d, recipes).filter(x => x.r) : [];
   const note = notes[key];
   const label = `今日（${t.getMonth() + 1}/${t.getDate()}）`;
-  const tmr = planDayIndex(plan, now + 864e5);
-  const td = tmr >= 0 ? normDay(plan.days[tmr]) : null;
+  const tPlan = planFor(plans, now + 864e5);
+  const tmr = planDayIndex(tPlan, now + 864e5);
+  const td = tmr >= 0 ? normDay(tPlan.days[tmr]) : null;
   const tList = td && !td.off ? dayItems(td, recipes).filter(x => x.r) : [];
   const kcal = list.reduce((s, {
     r
@@ -3963,7 +4039,7 @@ function TodayView({
     className: "font-bold"
   }, d && d.off ? '今日は作らない日です' : '今日の献立はまだ決まっていません'), React.createElement("p", {
     className: "text-sm text-muted"
-  }, d && d.off ? '外食・作り置き・お休みの日。メニューを入れるときは献立タブから。' : '献立タブで「今週」の献立をつくると、ここに表示されます。'), React.createElement("button", {
+  }, d && d.off ? '外食・作り置き・お休みの日。メニューを入れるときは献立タブから。' : '献立タブで今週の献立をつくると、ここに表示されます。'), React.createElement("button", {
     className: btnGhost,
     onClick: goPlan
   }, React.createElement(Icon, {
@@ -3995,12 +4071,132 @@ function TodayView({
     className: "truncate font-medium"
   }, r.name)))))));
 }
+const STOCK_QUICK = ['しょうゆ', 'みりん', '砂糖', '塩', 'サラダ油', 'マヨネーズ', 'ケチャップ', 'みそ', '米', '卵', 'ラップ', 'ティッシュ', '食器用洗剤', 'ゴミ袋', 'トイレットペーパー'];
+function StockMemo({
+  stock,
+  setStock
+}) {
+  const [name, setName] = useState('');
+  const [level, setLevel] = useState('out');
+  const [quick, setQuick] = useState(false);
+  const add = (n, lv = level) => {
+    n = (n || '').trim();
+    if (!n) return;
+    if (stock.some(x => x.name === n && !x.checked)) return;
+    setStock([...stock, {
+      id: uid(),
+      name: n,
+      level: lv,
+      checked: false,
+      at: Date.now()
+    }]);
+    setName('');
+  };
+  const upd = (id, patch) => setStock(stock.map(x => x.id === id ? {
+    ...x,
+    ...patch
+  } : x));
+  const done = stock.filter(x => x.checked).length;
+  return React.createElement("section", {
+    className: "rounded-2xl border-2 border-dashed border-honey/60 bg-honey/10 p-4 flex flex-col gap-3"
+  }, React.createElement("div", {
+    className: "flex items-start justify-between gap-2"
+  }, React.createElement("div", null, React.createElement("h3", {
+    className: "font-display font-bold flex items-center gap-1.5"
+  }, React.createElement(Icon, {
+    name: "NotebookPen",
+    size: 18,
+    className: "text-honey"
+  }), "\u3064\u3044\u3067\u306B\u8CB7\u3046\u3082\u306E\u30E1\u30E2"), React.createElement("p", {
+    className: "text-xs text-muted mt-0.5"
+  }, "\u306A\u304F\u306A\u3063\u305F\u30FB\u5C11\u306A\u304F\u306A\u3063\u305F\u8ABF\u5473\u6599\u3084\u65E5\u7528\u54C1\u3092\u30E1\u30E2\u3002\u732E\u7ACB\u306E\u8CB7\u3044\u7269\u30EA\u30B9\u30C8\u3092\u4F5C\u308A\u76F4\u3057\u3066\u3082\u6D88\u3048\u307E\u305B\u3093\u3002")), done > 0 && React.createElement("button", {
+    onClick: () => setStock(stock.filter(x => !x.checked)),
+    className: "shrink-0 text-xs font-bold text-primary px-2 py-1 rounded-lg hover:bg-surface"
+  }, "\u8CB7\u3063\u305F", done, "\u4EF6\u3092\u6D88\u3059")), React.createElement("div", {
+    className: "flex gap-2"
+  }, React.createElement("input", {
+    id: "stock-add",
+    value: name,
+    onChange: e => setName(e.target.value),
+    onKeyDown: e => {
+      if (e.key === 'Enter') add(name);
+    },
+    className: field,
+    placeholder: "\u4F8B\uFF1A\u3057\u3087\u3046\u3086\u3001\u30E9\u30C3\u30D7"
+  }), React.createElement("button", {
+    onClick: () => add(name),
+    className: btnPrimary + ' shrink-0 px-3 py-2.5',
+    "aria-label": "\u30E1\u30E2\u306B\u8FFD\u52A0"
+  }, React.createElement(Icon, {
+    name: "Plus"
+  }))), React.createElement("div", {
+    className: "flex items-center gap-1.5 text-xs"
+  }, React.createElement("span", {
+    className: "text-muted whitespace-nowrap"
+  }, "\u72B6\u614B\uFF1A"), React.createElement(Chip, {
+    small: true,
+    active: level === 'out',
+    onClick: () => setLevel('out')
+  }, "\u306A\u304F\u306A\u3063\u305F"), React.createElement(Chip, {
+    small: true,
+    active: level === 'low',
+    onClick: () => setLevel('low')
+  }, "\u5C11\u306A\u3044"), React.createElement("button", {
+    onClick: () => setQuick(!quick),
+    className: "ml-auto font-bold text-primary flex items-center gap-0.5 whitespace-nowrap"
+  }, "\u3088\u304F\u4F7F\u3046\u54C1", React.createElement(Icon, {
+    name: quick ? 'ChevronUp' : 'ChevronDown',
+    size: 14
+  }))), quick && React.createElement("div", {
+    className: "flex flex-wrap gap-1.5"
+  }, STOCK_QUICK.map(q => React.createElement(Chip, {
+    small: true,
+    key: q,
+    active: stock.some(x => x.name === q && !x.checked),
+    onClick: () => add(q)
+  }, q))), stock.length > 0 ? React.createElement("ul", {
+    className: "rounded-xl bg-surface divide-y divide-line/70 border border-line"
+  }, stock.map(x => React.createElement("li", {
+    key: x.id,
+    className: "flex items-center gap-2.5 px-3 py-2.5"
+  }, React.createElement("button", {
+    onClick: () => upd(x.id, {
+      checked: !x.checked
+    }),
+    "aria-pressed": x.checked,
+    "aria-label": `${x.name}を買った`,
+    className: `w-6 h-6 shrink-0 rounded-md border-2 flex items-center justify-center ${x.checked ? 'bg-primary border-primary text-pink' : 'border-line bg-surface'}`
+  }, x.checked && React.createElement(Icon, {
+    name: "Check",
+    size: 14,
+    strokeWidth: 3
+  })), React.createElement("span", {
+    className: `flex-1 min-w-0 truncate ${x.checked ? 'line-through text-muted' : ''}`
+  }, x.name), React.createElement("button", {
+    onClick: () => upd(x.id, {
+      level: x.level === 'out' ? 'low' : 'out'
+    }),
+    "aria-label": "\u72B6\u614B\u3092\u5207\u308A\u66FF\u3048",
+    className: `shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${x.level === 'out' ? 'bg-danger/15 text-danger' : 'bg-honey/25 text-ink'}`
+  }, x.level === 'out' ? 'なくなった' : '少ない'), React.createElement("button", {
+    onClick: () => setStock(stock.filter(y => y.id !== x.id)),
+    "aria-label": `${x.name}を削除`,
+    className: "shrink-0 text-muted hover:text-danger"
+  }, React.createElement(Icon, {
+    name: "X",
+    size: 16
+  }))))) : React.createElement("p", {
+    className: "text-sm text-muted text-center py-1"
+  }, "\u307E\u3060\u30E1\u30E2\u306F\u3042\u308A\u307E\u305B\u3093"));
+}
 function Shopping({
   items,
   setItems,
   hasPlan,
   goPlan,
-  toast
+  toast,
+  stock,
+  setStock
 }) {
   const [name, setName] = useState('');
   const toggle = id => setItems(items.map(i => i.id === id ? {
@@ -4023,7 +4219,8 @@ function Shopping({
   const left = items.filter(i => !i.checked).length;
   const groups = [['food', '食材', 'Carrot'], ['manual', '追加したもの', 'PenLine'], ['pantry', '調味料・常備品（家にあれば不要）', 'Soup']];
   async function copy() {
-    const txt = items.filter(i => !i.checked).map(i => `□ ${i.name}${i.amount ? ' ' + i.amount : ''}`).join('\n');
+    const so = stock.filter(x => !x.checked);
+    const txt = items.filter(i => !i.checked).map(i => `□ ${i.name}${i.amount ? ' ' + i.amount : ''}`).join('\n') + (so.length ? `${items.length ? '\n\n' : ''}■ついでに買うもの\n` + so.map(x => `□ ${x.name}（${x.level === 'out' ? 'なくなった' : '少ない'}）`).join('\n') : '');
     try {
       await navigator.clipboard.writeText(txt);
       toast('未チェックの品をコピーしました');
@@ -4032,6 +4229,11 @@ function Shopping({
     }
   }
   if (!items.length) return React.createElement("div", {
+    className: "flex flex-col gap-4"
+  }, React.createElement(StockMemo, {
+    stock: stock,
+    setStock: setStock
+  }), React.createElement("div", {
     className: "stamp rounded-2xl p-8 text-center text-muted flex flex-col items-center gap-3"
   }, React.createElement(Icon, {
     name: "ShoppingCart",
@@ -4059,7 +4261,7 @@ function Shopping({
     "aria-label": "\u8FFD\u52A0"
   }, React.createElement(Icon, {
     name: "Plus"
-  }))));
+  })))));
   return React.createElement("div", {
     className: "flex flex-col gap-4"
   }, React.createElement("div", {
@@ -4084,7 +4286,10 @@ function Shopping({
   }, React.createElement(Icon, {
     name: "ListX",
     size: 18
-  })))), React.createElement("div", {
+  })))), React.createElement(StockMemo, {
+    stock: stock,
+    setStock: setStock
+  }), React.createElement("div", {
     className: "h-2 rounded-full bg-sunk overflow-hidden"
   }, React.createElement("div", {
     className: "h-full bg-primary transition-all",
@@ -5014,13 +5219,27 @@ function App() {
     tRef.current = setTimeout(() => setToastMsg(''), 2800);
   }, []);
   const categories = meta.categories || DEFAULT_CATS;
-  const plan = meta.plan || {
+  const offDays = meta.offDays || [];
+  const stock = meta.stock || [];
+  const plans = useMemo(() => {
+    if (meta.plans) return meta.plans;
+    const p = meta.plan;
+    return p && p.weekStart && p.days && p.days.length ? {
+      [dateKey(mondayOf(p.weekStart))]: {
+        ...p,
+        weekStart: mondayOf(p.weekStart)
+      }
+    } : {};
+  }, [meta.plans, meta.plan]);
+  const [viewWeek, setViewWeek] = useState(() => thisMonday());
+  const plan = plans[dateKey(viewWeek)] || {
     mode: 'balanced',
     fridge: [],
-    days: []
+    days: [],
+    weekStart: viewWeek
   };
-  const offDays = meta.offDays || [];
-  const slots = meta.slots || plan.slots || ['主菜'];
+  const latestPlan = Object.values(plans).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))[0] || {};
+  const slots = meta.slots || latestPlan.slots || ['主菜'];
   const notes = meta.notes || {};
   const deviceId = useMemo(() => {
     let d = LS.get('device', '');
@@ -5105,7 +5324,9 @@ function App() {
               name: ''
             }
           });
-          await backend.setMeta('plan', p);
+          await backend.setMeta('plans', {
+            [dateKey(p.weekStart)]: p
+          });
           await backend.shopReplace(buildShopping(p, SAMPLES, []));
         }
         setReady(true);
@@ -5124,12 +5345,29 @@ function App() {
     };
   }, []);
   const setCategories = c => wr(backend.setMeta('categories', c));
-  const setPlan = p => {
+  function setPlan(p) {
+    const ws = mondayOf(p.weekStart || viewWeek);
+    const cutoff = dateKey(thisMonday() - 8 * 7 * 864e5);
+    const next = {};
+    Object.entries(plans).forEach(([k, v]) => {
+      if (k >= cutoff) next[k] = v;
+    });
+    next[dateKey(ws)] = {
+      ...p,
+      weekStart: ws
+    };
     setMeta(m => ({
       ...m,
-      plan: p
+      plans: next
     }));
-    wr(backend.setMeta('plan', p));
+    wr(backend.setMeta('plans', next));
+  }
+  const setStock = v => {
+    setMeta(m => ({
+      ...m,
+      stock: v
+    }));
+    wr(backend.setMeta('stock', v));
   };
   const setOffDays = o => {
     setMeta(m => ({
@@ -5179,8 +5417,9 @@ function App() {
   function shareToday() {
     const now = Date.now();
     const t = new Date(now);
-    const i = planDayIndex(plan, now);
-    const d = i >= 0 ? normDay(plan.days[i]) : null;
+    const tp = planFor(plans, now);
+    const i = planDayIndex(tp, now);
+    const d = i >= 0 ? normDay(tp.days[i]) : null;
     const L = [`【今日の献立】${t.getMonth() + 1}/${t.getDate()}（${DAYS[(t.getDay() + 6) % 7]}）`];
     if (d && !d.off) L.push(menuText(d, recipes) || '（まだ決まっていません）');else L.push(d ? '今日は作らない日です' : '（まだ決まっていません）');
     if (todayNote && todayNote.text) L.push('', `■伝えたいこと${todayNote.name ? '（' + todayNote.name + 'より）' : ''}`, todayNote.text);
@@ -5290,11 +5529,12 @@ function App() {
       exportedAt: new Date().toISOString(),
       recipes,
       categories,
-      plan,
+      plans,
       shopping,
       offDays,
       slots,
-      notes
+      notes,
+      stock
     };
     const json = JSON.stringify(data);
     const d = new Date();
@@ -5344,7 +5584,18 @@ function App() {
       n++;
     }
     if (Array.isArray(d.categories)) setCategories([...new Set([...categories, ...d.categories])]);
-    if (d.plan && Array.isArray(d.plan.days)) setPlan(d.plan);
+    if (d.plans && typeof d.plans === 'object') {
+      const nx = {
+        ...plans,
+        ...d.plans
+      };
+      setMeta(m => ({
+        ...m,
+        plans: nx
+      }));
+      wr(backend.setMeta('plans', nx));
+    } else if (d.plan && Array.isArray(d.plan.days)) setPlan(d.plan);
+    if (Array.isArray(d.stock)) setStock(d.stock);
     if (Array.isArray(d.shopping)) setShopping(d.shopping);
     if (Array.isArray(d.offDays)) setOffDays(d.offDays);
     if (Array.isArray(d.slots)) setSlots(d.slots);
@@ -5367,11 +5618,11 @@ function App() {
       ...i,
       order: undefined
     })));
-    toast('買い物リストを作りました');
+    toast(`${weekLabel(viewWeek)}の買い物リストを作りました`);
     go('shop');
   }
   const detailObj = detail && !detail.generic ? recipes.find(r => r.id === detail.id) || null : detail;
-  const shopLeft = shopping.filter(i => !i.checked).length;
+  const shopLeft = shopping.filter(i => !i.checked).length + stock.filter(x => !x.checked).length;
   const TABS = [['today', 'Sun', '今日'], ['list', 'BookOpen', 'レシピ'], ['new', 'PlusCircle', '登録'], ['plan', 'CalendarDays', '献立'], ['shop', 'ShoppingCart', '買い物']];
   const titles = {
     today: '今日の献立',
@@ -5441,7 +5692,7 @@ function App() {
       paddingBottom: 'calc(96px + env(safe-area-inset-bottom,0px))'
     }
   }, tab === 'today' && React.createElement(TodayView, {
-    plan: plan,
+    plans: plans,
     recipes: recipes,
     notes: notes,
     onOpen: setDetail,
@@ -5471,6 +5722,10 @@ function App() {
     } : null,
     toast: toast
   }), tab === 'plan' && React.createElement(WeekPlan, {
+    key: dateKey(viewWeek),
+    weekStart: viewWeek,
+    setWeekStart: setViewWeek,
+    plans: plans,
     plan: plan,
     setPlan: setPlan,
     recipes: recipes,
@@ -5490,7 +5745,9 @@ function App() {
   }), tab === 'shop' && React.createElement(Shopping, {
     items: shopping,
     setItems: setShopping,
-    hasPlan: !!(plan.days && plan.days.length),
+    stock: stock,
+    setStock: setStock,
+    hasPlan: Object.keys(plans).length > 0,
     goPlan: () => go('plan'),
     toast: toast
   })), React.createElement("nav", {
