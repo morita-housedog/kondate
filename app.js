@@ -1,4 +1,5 @@
 /* わたしの献立帖 */
+function _extends() { _extends = Object.assign ? Object.assign.bind() : function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 const {
   useState,
   useEffect,
@@ -565,6 +566,93 @@ const LUCIDE = {
     "r": "2"
   }], ["path", {
     "d": "m20 17-1.296-1.296a2.41 2.41 0 0 0-3.408 0L9 22"
+  }]],
+  "GripVertical": [["circle", {
+    "cx": "9",
+    "cy": "12",
+    "r": "1"
+  }], ["circle", {
+    "cx": "9",
+    "cy": "5",
+    "r": "1"
+  }], ["circle", {
+    "cx": "9",
+    "cy": "19",
+    "r": "1"
+  }], ["circle", {
+    "cx": "15",
+    "cy": "12",
+    "r": "1"
+  }], ["circle", {
+    "cx": "15",
+    "cy": "5",
+    "r": "1"
+  }], ["circle", {
+    "cx": "15",
+    "cy": "19",
+    "r": "1"
+  }]],
+  "LayoutList": [["rect", {
+    "width": "7",
+    "height": "7",
+    "x": "3",
+    "y": "3",
+    "rx": "1"
+  }], ["rect", {
+    "width": "7",
+    "height": "7",
+    "x": "3",
+    "y": "14",
+    "rx": "1"
+  }], ["path", {
+    "d": "M14 4h7"
+  }], ["path", {
+    "d": "M14 9h7"
+  }], ["path", {
+    "d": "M14 15h7"
+  }], ["path", {
+    "d": "M14 20h7"
+  }]],
+  "Lightbulb": [["path", {
+    "d": "M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"
+  }], ["path", {
+    "d": "M9 18h6"
+  }], ["path", {
+    "d": "M10 22h4"
+  }]],
+  "Sun": [["circle", {
+    "cx": "12",
+    "cy": "12",
+    "r": "4"
+  }], ["path", {
+    "d": "M12 2v2"
+  }], ["path", {
+    "d": "M12 20v2"
+  }], ["path", {
+    "d": "m4.93 4.93 1.41 1.41"
+  }], ["path", {
+    "d": "m17.66 17.66 1.41 1.41"
+  }], ["path", {
+    "d": "M2 12h2"
+  }], ["path", {
+    "d": "M20 12h2"
+  }], ["path", {
+    "d": "m6.34 17.66-1.41 1.41"
+  }], ["path", {
+    "d": "m19.07 4.93-1.41 1.41"
+  }]],
+  "Type": [["polyline", {
+    "points": "4 7 4 4 20 4 20 7"
+  }], ["line", {
+    "x1": "9",
+    "x2": "15",
+    "y1": "20",
+    "y2": "20"
+  }], ["line", {
+    "x1": "12",
+    "x2": "12",
+    "y1": "4",
+    "y2": "20"
   }]]
 };
 function Icon({
@@ -1286,8 +1374,10 @@ function parseCaption(text, categories) {
     kcalEstimated: false,
     url: '',
     cats: [],
-    servings: 1
+    servings: 1,
+    memo: ''
   };
+  const memo = [];
   const url = raw.match(/https?:\/\/(?:www\.)?instagram\.com\/[^\s]+/);
   if (url) res.url = url[0];
   const tags = [...raw.matchAll(/#([^\s#]+)/g)].map(m => m[1]);
@@ -1318,8 +1408,21 @@ function parseCaption(text, categories) {
       sawHeader = true;
       continue;
     }
-    if (plain.length <= 16 && /^(ポイント|コツ|memo|メモ|保存|point|tips|おすすめ|ひとこと)/i.test(plain)) {
-      mode = 'other';
+    {
+      const mh = L.match(/^[【\[■□◆◇▼▽☆★＜<《〈『「\s]*(ポイント|コツ|memo|メモ|保存方法|保存|point|tips|おすすめ|ひとこと|備考|注意)[】\]＞>》〉』」\s]*[:：]?\s*(.*)$/i);
+      if (mh && (plain.length <= 16 || /[:：】\]]/.test(L.slice(0, 12)))) {
+        mode = 'other';
+        const rest = mh[2].replace(/^[】\]＞>》〉』」:：\s]+/, '').trim();
+        if (rest) memo.push((/^(保存|注意)/.test(mh[1]) ? mh[1] + '：' : '') + rest);else if (/^(保存|注意)/.test(mh[1])) memo.push(mh[1] + '：');
+        continue;
+      }
+    }
+    if (mode === 'other') {
+      if (L.length < 24 && /kcal|カロリー/i.test(L)) continue;
+      const t = L.replace(/^[・●○◯◎★☆\-•※]+\s*/, '');
+      if (t) {
+        if (memo.length && /：$/.test(memo[memo.length - 1])) memo[memo.length - 1] += t;else memo.push(t);
+      }
       continue;
     }
     if (!res.name && !mode && L.length <= 30 && !STEP_NUM.test(L) && !/(大さじ|小さじ|\d+\s*(g|ml|cc|個|本|枚|切れ)|適量|少々)/.test(L)) {
@@ -1349,6 +1452,7 @@ function parseCaption(text, categories) {
     }
   }
   res.steps = res.steps.filter(Boolean);
+  res.memo = memo.filter(x => !/：$/.test(x)).join('\n');
   if (res.kcal == null && res.ingredients.length) {
     const e = estimateKcal(res.ingredients, res.servings);
     if (e) {
@@ -1503,7 +1607,7 @@ const GENERIC = [{
   id: 'g2',
   name: '親子丼',
   kcal: 650,
-  categories: ['主菜', '10分レシピ'],
+  categories: ['丼', '主菜', '10分レシピ'],
   ingredients: I('鶏もも肉:200g|玉ねぎ:1/2個|卵:3個|ごはん:2杯|めんつゆ:大さじ4'),
   steps: ['鶏肉はひと口大、玉ねぎは薄切りにする。', 'めんつゆと水100mlで鶏肉と玉ねぎを煮る。', '溶き卵を回し入れ、半熟でごはんにのせる。']
 }, {
@@ -1611,11 +1715,116 @@ const GENERIC = [{
   categories: ['副菜', '作り置き'],
   ingredients: I('なす:3本|めんつゆ:大さじ3|しょうが:1かけ|ごま油:大さじ2'),
   steps: ['なすを切って油で焼く。', 'めんつゆとしょうがの漬け汁に浸す。']
+}, {
+  id: 'g18',
+  name: '豆腐とわかめの味噌汁',
+  kcal: 60,
+  categories: ['汁物', '10分レシピ'],
+  ingredients: I('豆腐:1/2丁|乾燥わかめ:大さじ1|長ねぎ:1/4本|だし:600ml|みそ:大さじ2.5'),
+  steps: ['だしを温め、さいの目に切った豆腐とわかめを入れる。', '火を止めてみそを溶き、ねぎを散らす。']
+}, {
+  id: 'g19',
+  name: 'ふわふわ卵の中華スープ',
+  kcal: 70,
+  categories: ['汁物', '10分レシピ'],
+  ingredients: I('卵:1個|長ねぎ:1/4本|鶏がらスープの素:小さじ2|しょうゆ:小さじ1|片栗粉:小さじ1|ごま油:少々'),
+  steps: ['水500mlと鶏がらスープの素を煮立てる。', '水溶き片栗粉でとろみをつけ、溶き卵を回し入れる。', 'ねぎとごま油を加える。']
+}, {
+  id: 'g20',
+  name: '野菜たっぷりミネストローネ',
+  kcal: 120,
+  categories: ['汁物', '作り置き'],
+  ingredients: I('トマト缶:1/2缶|玉ねぎ:1/2個|にんじん:1/3本|キャベツ:2枚|ベーコン:2枚|コンソメ:小さじ2|塩こしょう:少々'),
+  steps: ['野菜とベーコンを1cm角に切って炒める。', 'トマト缶、水400ml、コンソメを加えて10分煮る。', '塩こしょうで味を調える。']
+}, {
+  id: 'g21',
+  name: 'なめこと豆腐の味噌汁',
+  kcal: 55,
+  categories: ['汁物'],
+  ingredients: I('なめこ:1袋|豆腐:1/2丁|だし:600ml|みそ:大さじ2.5|長ねぎ:少々'),
+  steps: ['だしでなめこと豆腐を煮る。', 'みそを溶いてねぎを散らす。']
+}, {
+  id: 'g22',
+  name: 'きんぴらごぼう',
+  kcal: 110,
+  categories: ['副菜', '作り置き', 'お弁当'],
+  ingredients: I('ごぼう:1本|にんじん:1/3本|ごま油:大さじ1|しょうゆ:大さじ1.5|みりん:大さじ1.5|砂糖:小さじ1|白ごま:適量'),
+  steps: ['ごぼうとにんじんを細切りにする。', 'ごま油で炒め、調味料を加えて汁気がなくなるまで炒める。', 'ごまをふる。']
+}, {
+  id: 'g23',
+  name: 'ポテトサラダ',
+  kcal: 180,
+  categories: ['副菜', '作り置き'],
+  ingredients: I('じゃがいも:3個|きゅうり:1/2本|ハム:3枚|マヨネーズ:大さじ4|塩こしょう:少々'),
+  steps: ['じゃがいもをゆでてつぶす。', '薄切りのきゅうりは塩もみ、ハムは細切りにする。', 'すべてをマヨネーズで和える。']
+}, {
+  id: 'g24',
+  name: '小松菜のごま和え',
+  kcal: 60,
+  categories: ['副菜', '10分レシピ', 'ダイエット'],
+  ingredients: I('小松菜:1束|すりごま:大さじ2|しょうゆ:小さじ2|砂糖:小さじ1'),
+  steps: ['小松菜をゆでて水気を絞り、4cmに切る。', 'ごま、しょうゆ、砂糖で和える。']
+}, {
+  id: 'g25',
+  name: 'もやしのナムル',
+  kcal: 70,
+  categories: ['副菜', '10分レシピ', '作り置き'],
+  ingredients: I('もやし:1袋|ごま油:大さじ1|鶏がらスープの素:小さじ1/2|にんにく:少々|白ごま:適量'),
+  steps: ['もやしをさっとゆでて水気を切る。', '調味料と和えてごまをふる。']
+}, {
+  id: 'g26',
+  name: '薬味たっぷり冷奴',
+  kcal: 90,
+  categories: ['副菜', '10分レシピ', 'ダイエット'],
+  ingredients: I('豆腐:1丁|長ねぎ:少々|しょうが:少々|かつお節:適量|しょうゆ:適量'),
+  steps: ['豆腐を切って器に盛る。', '薬味とかつお節をのせ、しょうゆをかける。']
+}, {
+  id: 'g27',
+  name: '牛丼',
+  kcal: 680,
+  categories: ['丼', '主菜'],
+  ingredients: I('牛こま切れ肉:200g|玉ねぎ:1個|ごはん:2杯|しょうゆ:大さじ3|みりん:大さじ3|砂糖:大さじ1|だし:150ml|紅しょうが:適量'),
+  steps: ['玉ねぎを薄切りにし、だしと調味料で煮る。', '牛肉を加えてアクを取りながら5分煮る。', 'ごはんにのせ、紅しょうがを添える。']
+}, {
+  id: 'g28',
+  name: '甘辛豚丼',
+  kcal: 650,
+  categories: ['丼', '主菜', '10分レシピ'],
+  ingredients: I('豚ばら薄切り:200g|玉ねぎ:1/2個|ごはん:2杯|しょうゆ:大さじ2|みりん:大さじ2|砂糖:大さじ1|しょうが:少々'),
+  steps: ['豚肉と玉ねぎを焼く。', '調味料を加えて煮絡める。', 'ごはんにのせる。']
+}, {
+  id: 'g29',
+  name: '天津飯',
+  kcal: 560,
+  categories: ['丼', '10分レシピ'],
+  ingredients: I('卵:4個|かにかま:4本|長ねぎ:1/4本|ごはん:2杯|鶏がらスープの素:小さじ1|しょうゆ:大さじ1|酢:大さじ1|砂糖:大さじ1|片栗粉:大さじ1'),
+  steps: ['卵にかにかまとねぎを混ぜて焼き、ごはんにのせる。', '水150mlと調味料を煮立て、水溶き片栗粉でとろみをつける。', 'あんをかける。']
+}, {
+  id: 'g30',
+  name: 'フルーツヨーグルト',
+  kcal: 120,
+  categories: ['デザート', '10分レシピ'],
+  ingredients: I('プレーンヨーグルト:200g|バナナ:1本|キウイ:1個|はちみつ:小さじ2'),
+  steps: ['果物を食べやすく切る。', 'ヨーグルトにのせ、はちみつをかける。']
+}, {
+  id: 'g31',
+  name: '牛乳かん',
+  kcal: 90,
+  categories: ['デザート', '作り置き'],
+  ingredients: I('牛乳:400ml|粉寒天:2g|砂糖:大さじ3|みかん缶:1/2缶'),
+  steps: ['水100mlと寒天を煮溶かし、砂糖と牛乳を加えて温める。', 'みかんを入れた型に流し、冷蔵庫で固める。']
+}, {
+  id: 'g32',
+  name: 'レンジ焼きりんご',
+  kcal: 150,
+  categories: ['デザート'],
+  ingredients: I('りんご:1個|バター:10g|砂糖:大さじ1|シナモン:少々'),
+  steps: ['りんごを8等分にし、バターと砂糖をのせる。', 'ラップをして600Wで4分加熱し、シナモンをふる。']
 }].map(g => ({
   ...g,
   generic: true
 }));
-const DEFAULT_CATS = ['主菜', '副菜', '汁物', '10分レシピ', 'ダイエット', 'お弁当', '作り置き'];
+const DEFAULT_CATS = ['主菜', '副菜', '汁物', '丼', 'デザート', '10分レシピ', 'ダイエット', 'お弁当', '作り置き'];
 const SAMPLES = [{
   name: '鶏むねのレンジ蒸し ねぎ塩だれ',
   kcal: 290,
@@ -1646,6 +1855,23 @@ const SAMPLES = [{
   createdAt: Date.now() - i
 }));
 const DAYS = ['月', '火', '水', '木', '金', '土', '日'];
+const ANY = 'なんでも';
+const SLOT_PRESETS = [{
+  label: '主菜だけ',
+  slots: ['主菜']
+}, {
+  label: '主菜＋副菜',
+  slots: ['主菜', '副菜']
+}, {
+  label: '主菜＋副菜＋汁物',
+  slots: ['主菜', '副菜', '汁物']
+}, {
+  label: '丼＋汁物',
+  slots: ['丼', '汁物']
+}, {
+  label: '丼＋汁物＋デザート',
+  slots: ['丼', '汁物', 'デザート']
+}];
 const shuffle = a => {
   const b = [...a];
   for (let i = b.length - 1; i > 0; i--) {
@@ -1654,14 +1880,29 @@ const shuffle = a => {
   }
   return b;
 };
-function nextMonday() {
+const startOfDay = d => {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x.getTime();
+};
+function thisMonday() {
   const d = new Date();
-  const wd = (d.getDay() + 6) % 7;
-  const add = wd === 0 ? 0 : 7 - wd;
-  d.setDate(d.getDate() + add);
-  d.setHours(0, 0, 0, 0);
-  return d.getTime();
+  d.setDate(d.getDate() - (d.getDay() + 6) % 7);
+  return startOfDay(d);
 }
+function nextMonday() {
+  return thisMonday() + 7 * 864e5;
+}
+const dateKey = t => {
+  const d = new Date(t);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+const planDayIndex = (plan, t) => {
+  if (!plan || !plan.weekStart) return -1;
+  const i = Math.round((startOfDay(t) - startOfDay(plan.weekStart)) / 864e5);
+  return i >= 0 && i < 7 ? i : -1;
+};
+const inSlot = (r, slot) => !slot || slot === ANY || (r.categories || []).includes(slot);
 function scoreRecipe(r, fridge) {
   const ings = (r.ingredients || []).filter(i => i.name && !isPantry(i.name));
   const hit = ings.filter(i => fridge.some(f => matchIng(i.name, f)));
@@ -1671,120 +1912,172 @@ function scoreRecipe(r, fridge) {
     score: (ings.length ? hit.length / ings.length + hit.length * .15 : 0) + (r.fav && hit.length ? .2 : 0)
   };
 }
-function planFromFridge(recipes, fridge, n) {
-  const used = new Set();
-  const days = [];
-  const mine = recipes.map(r => ({
-    r,
-    s: scoreRecipe(r, fridge)
-  })).filter(x => x.s.hit > 0).sort((a, b) => b.s.score - a.s.score);
-  const gen = GENERIC.map(r => ({
-    r,
-    s: scoreRecipe(r, fridge)
-  })).filter(x => x.s.hit > 0).sort((a, b) => b.s.score - a.s.score);
-  for (const x of mine) {
-    if (days.length >= n) break;
-    days.push({
-      source: 'mine',
-      id: x.r.id,
-      hit: x.s.hit,
-      total: x.s.total
-    });
-    used.add(x.r.id);
-  }
-  for (const x of gen) {
-    if (days.length >= n) break;
-    days.push({
-      source: 'generic',
-      id: x.r.id,
-      hit: x.s.hit,
-      total: x.s.total
-    });
-    used.add(x.r.id);
-  }
-  for (const r of shuffle(GENERIC)) {
-    if (days.length >= n) break;
-    if (used.has(r.id)) continue;
-    days.push({
-      source: 'generic',
-      id: r.id,
-      hit: 0,
-      total: scoreRecipe(r, fridge).total
-    });
-    used.add(r.id);
-  }
-  return days;
+function normDay(d) {
+  if (!d || d.off) return {
+    off: true
+  };
+  if (Array.isArray(d.items)) return d;
+  if (d.id) return {
+    items: [{
+      slot: null,
+      source: d.source,
+      id: d.id,
+      hit: d.hit,
+      total: d.total
+    }]
+  };
+  return {
+    off: true
+  };
 }
-function planBalanced(recipes, catFilter, n, favBoost) {
-  let pool = catFilter ? recipes.filter(r => (r.categories || []).includes(catFilter)) : recipes;
-  pool = shuffle(pool);
-  const days = [];
-  const used = new Set();
-  let prevCat = null;
-  for (let d = 0; d < n; d++) {
-    let best = null,
-      bp = 1e9;
-    for (const r of pool) {
-      if (used.has(r.id)) continue;
-      const c = (r.categories || [])[0] || '';
-      const p = (c && c === prevCat ? 3 : 0) - (favBoost && r.fav ? 2.5 : 0) + Math.random() * 2;
-      if (p < bp) {
-        bp = p;
-        best = r;
-      }
-    }
-    if (!best) break;
-    used.add(best.id);
-    prevCat = (best.categories || [])[0] || null;
-    days.push({
+const findRecipe = (it, recipes) => !it || it.empty || it.off ? null : it.source === 'mine' ? recipes.find(x => x.id === it.id) : GENERIC.find(x => x.id === it.id);
+const dayItems = (d, recipes) => {
+  const n = normDay(d);
+  return n.off ? [] : n.items.map(it => ({
+    it,
+    r: findRecipe(it, recipes)
+  }));
+};
+function pickForSlot(slot, n, {
+  recipes,
+  mode,
+  fridge,
+  favBoost
+}, used) {
+  const mine = recipes.filter(r => inSlot(r, slot)).map(r => ({
       source: 'mine',
-      id: best.id
-    });
-  }
-  const g = shuffle(catFilter ? GENERIC.filter(r => r.categories.includes(catFilter)) : GENERIC);
-  const g2 = g.length ? g : shuffle(GENERIC);
-  let k = 0;
-  while (days.length < n) {
-    days.push({
+      r
+    })),
+    gen = GENERIC.filter(r => inSlot(r, slot)).map(r => ({
       source: 'generic',
-      id: g2[k % g2.length].id
-    });
-    k++;
-  }
-  return days;
-}
-function spread(list, off) {
+      r
+    }));
   const out = [];
+  const take = x => {
+    out.push({
+      slot,
+      source: x.source,
+      id: x.r.id,
+      ...(x.s ? {
+        hit: x.s.hit,
+        total: x.s.total
+      } : {})
+    });
+    used.add(x.r.id);
+  };
+  if (mode === 'fridge') {
+    const sc = [...mine, ...gen].map(x => ({
+      ...x,
+      s: scoreRecipe(x.r, fridge)
+    })).filter(x => x.s.hit > 0).sort((a, b) => b.s.score + (b.source === 'mine' ? .05 : 0) - (a.s.score + (a.source === 'mine' ? .05 : 0)));
+    for (const x of sc) {
+      if (out.length >= n) break;
+      if (!used.has(x.r.id)) take(x);
+    }
+  }
+  const ordered = shuffle(mine).sort((a, b) => favBoost ? (b.r.fav ? 1 : 0) - (a.r.fav ? 1 : 0) : 0);
+  for (const x of [...ordered.filter(x => favBoost ? x.r.fav : false), ...ordered.filter(x => !(favBoost && x.r.fav)), ...shuffle(gen)]) {
+    if (out.length >= n) break;
+    if (!used.has(x.r.id)) take(mode === 'fridge' ? {
+      ...x,
+      s: scoreRecipe(x.r, fridge)
+    } : x);
+  }
+  const pool = [...mine, ...gen];
   let k = 0;
-  for (let i = 0; i < 7; i++) {
-    if (off.includes(i)) out.push({
-      off: true
-    });else out.push(list[k++] || {
-      off: true
+  while (out.length < n) {
+    if (!pool.length) {
+      out.push({
+        slot,
+        empty: true
+      });
+      continue;
+    }
+    const x = pool[k % pool.length];
+    k++;
+    out.push({
+      slot,
+      source: x.source,
+      id: x.r.id
     });
   }
   return out;
 }
-const findRecipe = (d, recipes) => !d || d.off ? null : d.source === 'mine' ? recipes.find(x => x.id === d.id) : GENERIC.find(x => x.id === d.id);
+function planWeek(opts) {
+  const off = opts.off || [];
+  const slots = opts.slots && opts.slots.length ? opts.slots : ['主菜'];
+  const cook = [0, 1, 2, 3, 4, 5, 6].filter(i => !off.includes(i));
+  const n = cook.length;
+  const used = new Set();
+  const cols = slots.map(s => pickForSlot(s, n, opts, used));
+  let dayList = Array.from({
+    length: n
+  }, (_, k) => ({
+    items: cols.map(c => c[k])
+  }));
+  if (opts.mode === 'fridge') dayList.sort((a, b) => b.items.reduce((s, i) => s + (i.hit || 0), 0) - a.items.reduce((s, i) => s + (i.hit || 0), 0));
+  const days = [];
+  let k = 0;
+  for (let i = 0; i < 7; i++) days.push(off.includes(i) ? {
+    off: true
+  } : dayList[k++] || {
+    off: true
+  });
+  return days;
+}
+function autoPick(plan, recipes, slot, excludeIds) {
+  const used = new Set(excludeIds);
+  const fridge = plan.fridge || [];
+  const all = [...recipes.map(r => ({
+    source: 'mine',
+    r
+  })), ...GENERIC.map(r => ({
+    source: 'generic',
+    r
+  }))].filter(x => inSlot(x.r, slot) && !used.has(x.r.id));
+  if (!all.length) return null;
+  let cands;
+  if (plan.mode === 'fridge') cands = all.map(x => ({
+    ...x,
+    s: scoreRecipe(x.r, fridge)
+  })).sort((a, b) => b.s.score - a.s.score + (Math.random() - .5) * .3).slice(0, 5);else {
+    const mine = all.filter(x => x.source === 'mine');
+    const favs = mine.filter(x => x.r.fav);
+    cands = favs.length && Math.random() < .5 ? favs : mine.length ? mine : all;
+  }
+  const c = cands[Math.floor(Math.random() * cands.length)];
+  return {
+    slot,
+    source: c.source,
+    id: c.r.id,
+    ...(c.s ? {
+      hit: c.s.hit,
+      total: c.s.total
+    } : {})
+  };
+}
 function buildShopping(plan, recipes, prevItems) {
   const byName = new Map();
   const fridge = plan.mode === 'fridge' ? plan.fridge || [] : [];
-  plan.days.forEach((d, idx) => {
-    const r = findRecipe(d, recipes);
-    if (!r) return;
-    for (const i of r.ingredients || []) {
-      if (!i.name) continue;
-      if (fridge.some(f => matchIng(i.name, f))) continue;
-      const key = canon(i.name);
-      if (!byName.has(key)) byName.set(key, {
-        name: i.name.replace(/[（(][^）)]*[）)]/g, '').trim() || i.name,
-        amounts: [],
-        from: new Set(),
-        pantry: isPantry(i.name)
-      });
-      const e = byName.get(key);
-      e.amounts.push(i.amount);
-      e.from.add(DAYS[idx]);
+  (plan.days || []).forEach((d, idx) => {
+    for (const {
+      r
+    } of dayItems(d, recipes)) {
+      if (!r) continue;
+      for (const i of r.ingredients || []) {
+        if (!i.name) continue;
+        if (fridge.some(f => matchIng(i.name, f))) continue;
+        const key = canon(i.name);
+        if (!byName.has(key)) byName.set(key, {
+          name: i.name.replace(/[（(][^）)]*[）)]/g, '').trim() || i.name,
+          amounts: [],
+          from: new Set(),
+          pantry: isPantry(i.name)
+        });
+        const e = byName.get(key);
+        e.amounts.push(i.amount);
+        e.from.add(DAYS[idx]);
+      }
     }
   });
   const prevChecked = new Map((prevItems || []).filter(i => !i.manual).map(i => [canon(i.name), i.checked]));
@@ -1798,6 +2091,12 @@ function buildShopping(plan, recipes, prevItems) {
   }));
   items.sort((a, b) => a.group === b.group ? 0 : a.group === 'food' ? -1 : 1);
   return [...items, ...(prevItems || []).filter(i => i.manual)];
+}
+function menuText(d, recipes) {
+  return dayItems(d, recipes).filter(x => x.r).map(({
+    it,
+    r
+  }) => `・${it.slot && it.slot !== ANY ? it.slot + '：' : ''}${r.name}`).join('\n');
 }
 function Chip({
   active,
@@ -2148,8 +2447,83 @@ function RecipeDetail({
     className: "pt-0.5 min-w-0"
   }, s))), !(r.steps || []).length && React.createElement("li", {
     className: "text-muted"
-  }, "\u672A\u767B\u9332")))));
+  }, "\u672A\u767B\u9332"))), r.memo && React.createElement("section", {
+    className: "rounded-2xl bg-honey/15 border border-honey/40 p-4"
+  }, React.createElement("h4", {
+    className: "font-display font-bold mb-1.5 flex items-center gap-2"
+  }, React.createElement(Icon, {
+    name: "Lightbulb",
+    size: 18,
+    className: "text-honey"
+  }), "\u30DD\u30A4\u30F3\u30C8\u30FB\u30E1\u30E2"), React.createElement("p", {
+    className: "whitespace-pre-line text-[15px] leading-relaxed"
+  }, r.memo))));
 }
+function useDragSort(move) {
+  const rows = useRef([]);
+  const cur = useRef(null);
+  const [active, setActive] = useState(null);
+  const end = () => {
+    cur.current = null;
+    setActive(null);
+  };
+  const handle = i => ({
+    style: {
+      touchAction: 'none'
+    },
+    onPointerDown: e => {
+      if (e.button) return;
+      e.preventDefault();
+      try {
+        e.currentTarget.setPointerCapture(e.pointerId);
+      } catch (_) {}
+      cur.current = i;
+      setActive(i);
+    },
+    onPointerMove: e => {
+      if (cur.current == null) return;
+      const y = e.clientY;
+      let t = cur.current;
+      rows.current.forEach((el, j) => {
+        if (!el) return;
+        const r = el.getBoundingClientRect();
+        if (y >= r.top && y <= r.bottom) t = j;
+      });
+      if (t !== cur.current) {
+        move(cur.current, t);
+        cur.current = t;
+        setActive(t);
+      }
+    },
+    onPointerUp: end,
+    onPointerCancel: end,
+    onLostPointerCapture: end,
+    onKeyDown: e => {
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        move(i, i - 1);
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        move(i, i + 1);
+      }
+    }
+  });
+  const rowRef = i => el => {
+    rows.current[i] = el;
+  };
+  return {
+    handle,
+    rowRef,
+    active
+  };
+}
+const moveIn = (arr, from, to) => {
+  if (to < 0 || to >= arr.length || from === to) return arr;
+  const a = [...arr];
+  const [x] = a.splice(from, 1);
+  a.splice(to, 0, x);
+  return a;
+};
 const KCAL_BASES = ['1人分', '2人分', '3人分', '4人分', '1個あたり', '1切れあたり', '100gあたり', '全量'];
 const basisOf = r => r && r.kcalBasis || '1人分';
 const emptyForm = () => ({
@@ -2171,7 +2545,8 @@ const emptyForm = () => ({
   kcal: '',
   kcalBasis: '1人分',
   kcalEstimated: false,
-  categories: []
+  categories: [],
+  memo: ''
 });
 function RecipeForm({
   initial,
@@ -2215,6 +2590,14 @@ function RecipeForm({
       steps: a
     };
   });
+  const ingSort = useDragSort((a, b) => setF(p => ({
+    ...p,
+    ingredients: moveIn(p.ingredients, a, b)
+  })));
+  const stepSort = useDragSort((a, b) => setF(p => ({
+    ...p,
+    steps: moveIn(p.steps, a, b)
+  })));
   async function onPhoto(e) {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
@@ -2275,6 +2658,7 @@ function RecipeForm({
           kcal: r.kcal ? String(r.kcal) : '',
           kcalBasis: basisOf(r),
           kcalEstimated: false,
+          memo: r.memo || prev.memo || '',
           categories: [...new Set([...prev.categories, ...r.categories])]
         }));
         setCaption('');
@@ -2292,6 +2676,7 @@ function RecipeForm({
       kcal: p.kcal != null ? String(p.kcal) : prev.kcal,
       kcalBasis: p.kcal != null ? p.kcalEstimated ? '1人分' : p.kcalBasis : prev.kcalBasis,
       kcalEstimated: p.kcal != null ? p.kcalEstimated : prev.kcalEstimated,
+      memo: (prev.memo || '').trim() ? prev.memo : p.memo,
       categories: [...new Set([...prev.categories, ...p.cats])]
     }));
     toast(`材料${p.ingredients.length}件・手順${p.steps.length}件を入力しました${p.kcal != null ? p.kcalEstimated ? '（カロリーは材料から推定）' : '' : ''}`);
@@ -2396,6 +2781,7 @@ function RecipeForm({
     }
     onSave({
       ...f,
+      memo: (f.memo || '').trim(),
       kcalBasis: (f.kcalBasis || '').trim() || '1人分',
       name: f.name.trim(),
       kcal: f.kcal ? Math.round(+z2h(String(f.kcal)).replace(/[^\d.]/g, '') || 0) || null : null,
@@ -2584,10 +2970,24 @@ function RecipeForm({
   }, React.createElement(Icon, {
     name: "ListPlus",
     size: 16
-  }), "1\u884C\u305A\u3064\u6750\u6599\u306B\u5165\u308C\u308B"))), f.ingredients.map((i, k) => React.createElement("div", {
+  }), "1\u884C\u305A\u3064\u6750\u6599\u306B\u5165\u308C\u308B"))), f.ingredients.length > 1 && React.createElement("p", {
+    className: "text-xs text-muted -mt-1 flex items-center gap-1"
+  }, React.createElement(Icon, {
+    name: "GripVertical",
+    size: 13
+  }), "\u5DE6\u306E\u6301\u3061\u624B\u3092\u30C9\u30E9\u30C3\u30B0\u3059\u308B\u3068\u3001\u597D\u304D\u306A\u9806\u756A\u306B\u4E26\u3079\u66FF\u3048\u3089\u308C\u307E\u3059"), f.ingredients.map((i, k) => React.createElement("div", {
     key: k,
-    className: "flex gap-2 items-center"
-  }, React.createElement("input", {
+    ref: ingSort.rowRef(k),
+    className: `flex gap-1.5 items-center rounded-xl transition-colors ${ingSort.active === k ? 'bg-honey/20 ring-2 ring-honey/50' : ''}`
+  }, React.createElement("button", _extends({
+    type: "button",
+    "aria-label": `材料${k + 1}「${i.name || '未入力'}」を並べ替え（上下キーでも移動）`
+  }, ingSort.handle(k), {
+    className: "shrink-0 p-1.5 -ml-1 text-muted hover:text-ink cursor-grab active:cursor-grabbing rounded-lg"
+  }), React.createElement(Icon, {
+    name: "GripVertical",
+    size: 18
+  })), React.createElement("input", {
     id: `ing-n-${k}`,
     "aria-label": "\u6750\u6599\u540D",
     value: i.name,
@@ -2679,8 +3079,17 @@ function RecipeForm({
     size: 16
   }), "\u624B\u9806\u306B\u5206\u3051\u3066\u5165\u308C\u308B"))), f.steps.map((s, k) => React.createElement("div", {
     key: k,
-    className: "flex gap-2 items-start"
-  }, React.createElement("span", {
+    ref: stepSort.rowRef(k),
+    className: `flex gap-1.5 items-start rounded-xl transition-colors ${stepSort.active === k ? 'bg-honey/20 ring-2 ring-honey/50' : ''}`
+  }, React.createElement("button", _extends({
+    type: "button",
+    "aria-label": `手順${k + 1}を並べ替え（上下キーでも移動）`
+  }, stepSort.handle(k), {
+    className: "shrink-0 mt-2 p-1.5 -ml-1 text-muted hover:text-ink cursor-grab active:cursor-grabbing rounded-lg"
+  }), React.createElement(Icon, {
+    name: "GripVertical",
+    size: 18
+  })), React.createElement("span", {
     className: "shrink-0 mt-2 w-7 h-7 rounded-full bg-primary text-pink text-sm font-bold flex items-center justify-center tnum"
   }, k + 1), React.createElement("textarea", {
     id: `step-${k}`,
@@ -2706,6 +3115,22 @@ function RecipeForm({
     name: "Plus",
     size: 16
   }), "\u624B\u9806\u3092\u8FFD\u52A0")), React.createElement("div", {
+    className: "flex flex-col gap-1.5"
+  }, React.createElement("label", {
+    htmlFor: "memo",
+    className: "text-sm font-bold flex items-center gap-1.5"
+  }, React.createElement(Icon, {
+    name: "Lightbulb",
+    size: 16,
+    className: "text-honey"
+  }), "\u30DD\u30A4\u30F3\u30C8\u30FB\u30E1\u30E2"), React.createElement("textarea", {
+    id: "memo",
+    rows: 3,
+    value: f.memo || '',
+    onChange: e => set('memo', e.target.value),
+    className: field + ' text-sm',
+    placeholder: '例）加熱しすぎるとパサつくので余熱で火を通す\n冷蔵で2日保存OK／子ども用は辛味抜きで'
+  })), React.createElement("div", {
     className: "flex flex-col gap-1.5"
   }, React.createElement("label", {
     htmlFor: "kcal",
@@ -2807,49 +3232,65 @@ function RecipeForm({
     size: 18
   }), f.id ? '変更を保存' : 'レシピを保存')));
 }
+const fmtMD = t => {
+  const d = new Date(t);
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+};
+const slotLabel = s => s && s !== ANY ? s : '';
 function RecipePicker({
   open,
-  day,
+  title,
+  slot,
   onClose,
   recipes,
   onChoose,
   onAuto,
-  onOff,
-  isOff
+  onRemove,
+  onOff
 }) {
   const [q, setQ] = useState('');
   const [src, setSrc] = useState('fav');
+  const [onlySlot, setOnlySlot] = useState(true);
   useEffect(() => {
     if (open) {
       setQ('');
-      setSrc(recipes.some(r => r.fav) ? 'fav' : 'mine');
+      setOnlySlot(true);
+      const pool = recipes.filter(r => inSlot(r, slot));
+      setSrc(pool.some(r => r.fav) ? 'fav' : pool.length ? 'mine' : 'generic');
     }
-  }, [open]);
+  }, [open, slot]);
+  if (!open) return null;
+  const useSlot = onlySlot && slot && slot !== ANY;
   const nq = canon(q);
-  const base = src === 'fav' ? recipes.filter(r => r.fav) : src === 'mine' ? recipes : GENERIC;
+  const base = (src === 'fav' ? recipes.filter(r => r.fav) : src === 'mine' ? recipes : GENERIC).filter(r => !useSlot || inSlot(r, slot));
   const list = base.filter(r => !nq || canon(r.name).includes(nq) || (r.ingredients || []).some(i => canon(i.name).includes(nq)));
   return React.createElement(Sheet, {
-    open: open,
-    onClose: onClose,
-    title: day != null ? `${DAYS[day]}曜日のメニューを変更` : ''
+    open: true,
+    title: title,
+    onClose: onClose
   }, React.createElement("div", {
     className: "flex flex-col gap-3"
   }, React.createElement("div", {
-    className: "grid grid-cols-2 gap-2"
-  }, React.createElement("button", {
+    className: "flex flex-wrap gap-2"
+  }, onAuto && React.createElement("button", {
     onClick: onAuto,
-    className: btnGhost + ' text-sm'
+    className: btnGhost + ' text-sm flex-1'
   }, React.createElement(Icon, {
     name: "Shuffle",
     size: 16
-  }), "\u304A\u307E\u304B\u305B\u3067\u5909\u66F4"), React.createElement("button", {
+  }), "\u304A\u307E\u304B\u305B"), onRemove && React.createElement("button", {
+    onClick: onRemove,
+    className: btnGhost + ' text-sm flex-1'
+  }, React.createElement(Icon, {
+    name: "Trash2",
+    size: 16
+  }), "\u3053\u306E\u54C1\u3092\u5916\u3059"), onOff && React.createElement("button", {
     onClick: onOff,
-    disabled: isOff,
-    className: btnGhost + ' text-sm disabled:opacity-50'
+    className: btnGhost + ' text-sm flex-1'
   }, React.createElement(Icon, {
     name: "Moon",
     size: 16
-  }), "\u4F5C\u3089\u306A\u3044\u65E5\u306B\u3059\u308B")), React.createElement("label", {
+  }), "\u3053\u306E\u65E5\u306F\u4F5C\u3089\u306A\u3044")), React.createElement("label", {
     className: "relative block"
   }, React.createElement("span", {
     className: "absolute left-3.5 top-1/2 -translate-y-1/2 text-muted"
@@ -2868,7 +3309,17 @@ function RecipePicker({
     key: k,
     onClick: () => setSrc(k),
     className: `rounded-lg py-1.5 font-bold ${src === k ? 'bg-surface shadow-sm' : 'text-muted'}`
-  }, l))), React.createElement("ul", {
+  }, l))), slot && slot !== ANY && React.createElement("div", {
+    className: "flex gap-2"
+  }, React.createElement(Chip, {
+    small: true,
+    active: onlySlot,
+    onClick: () => setOnlySlot(true)
+  }, "\u300C", slot, "\u300D\u3060\u3051"), React.createElement(Chip, {
+    small: true,
+    active: !onlySlot,
+    onClick: () => setOnlySlot(false)
+  }, "\u3059\u3079\u3066\u306E\u30AB\u30C6\u30B4\u30EA")), React.createElement("ul", {
     className: "flex flex-col gap-1"
   }, list.map(r => React.createElement("li", {
     key: r.id
@@ -2884,7 +3335,7 @@ function RecipePicker({
     className: "block truncate font-medium"
   }, r.name), React.createElement("span", {
     className: "text-xs text-muted tnum"
-  }, r.kcal ? `${r.kcal}kcal` : '', (r.categories || []).length ? `・${r.categories.slice(0, 2).join('・')}` : '')), r.fav && React.createElement(Icon, {
+  }, r.kcal ? `${r.kcal}kcal` : '', (r.categories || []).length ? `・${r.categories.slice(0, 3).join('・')}` : '')), r.fav && React.createElement(Icon, {
     name: "Heart",
     size: 14,
     fill: "currentColor",
@@ -2895,24 +3346,178 @@ function RecipePicker({
     className: "text-muted"
   })))), !list.length && React.createElement("li", {
     className: "text-sm text-muted p-3 text-center"
-  }, src === 'fav' ? 'お気に入りはまだありません' : '見つかりませんでした'))));
+  }, src === 'fav' ? 'お気に入りはまだありません' : '見つかりませんでした', useSlot ? '。「すべてのカテゴリ」も見てみてください' : ''))));
+}
+const NOTE_PRESETS = ['温めて食べてね', '冷蔵庫に入ってるよ', 'ご飯は炊飯器にあるよ', 'ポン酢かソースをかけてね！', '先に寝てるね、おつかれさま'];
+function NoteSheet({
+  state,
+  note,
+  onClose,
+  onSave,
+  onDelete
+}) {
+  const [text, setText] = useState('');
+  const [name, setName] = useState('');
+  useEffect(() => {
+    if (state) {
+      setText(note && note.text || '');
+      setName(LS.get('nickname', ''));
+    }
+  }, [state]);
+  if (!state) return null;
+  return React.createElement(Sheet, {
+    open: true,
+    title: `伝えたいこと・${state.label}`,
+    onClose: onClose,
+    footer: React.createElement("div", {
+      className: "flex gap-2"
+    }, note && React.createElement("button", {
+      className: btnGhost + ' px-3',
+      "aria-label": "\u4F1D\u3048\u305F\u3044\u3053\u3068\u3092\u6D88\u3059",
+      onClick: () => {
+        onDelete();
+        onClose();
+      }
+    }, React.createElement(Icon, {
+      name: "Trash2",
+      size: 18
+    })), React.createElement("button", {
+      className: btnPrimary + ' flex-1',
+      disabled: !text.trim(),
+      onClick: () => {
+        LS.set('nickname', name.trim());
+        onSave(text.trim(), name.trim());
+        onClose();
+      }
+    }, React.createElement(Icon, {
+      name: "Send",
+      size: 16
+    }), "\u3053\u306E\u5185\u5BB9\u3067\u6B8B\u3059"))
+  }, React.createElement("div", {
+    className: "flex flex-col gap-3"
+  }, React.createElement("p", {
+    className: "text-sm text-muted"
+  }, "\u300C\u4ECA\u65E5\u300D\u306E\u753B\u9762\u306B\u5927\u304D\u304F\u8868\u793A\u3055\u308C\u307E\u3059\u3002\u5BB6\u65CF\u3067\u5171\u6709\u3057\u3066\u3044\u308C\u3070\u3001\u5BB6\u65CF\u306E\u30B9\u30DE\u30DB\u306B\u3082\u3059\u3050\u53CD\u6620\u3055\u308C\u307E\u3059\u3002"), React.createElement("textarea", {
+    id: "note-text",
+    rows: 4,
+    value: text,
+    onChange: e => setText(e.target.value),
+    className: field + ' text-base',
+    placeholder: "\u4F8B\uFF09\u30DD\u30F3\u9162\u304B\u30BD\u30FC\u30B9\u3092\u304B\u3051\u3066\u306D\uFF01\u3054\u98EF\u306F\u708A\u98EF\u5668\u306B\u3042\u308A\u307E\u3059"
+  }), React.createElement("div", {
+    className: "flex flex-wrap gap-1.5"
+  }, NOTE_PRESETS.map(p => React.createElement(Chip, {
+    small: true,
+    key: p,
+    onClick: () => setText(t => t.trim() ? t.trim() + '\n' + p : p)
+  }, p))), React.createElement("div", {
+    className: "flex flex-col gap-1"
+  }, React.createElement("label", {
+    htmlFor: "note-name",
+    className: "text-xs font-bold text-muted"
+  }, "\u3060\u308C\u304B\u3089\uFF08\u3053\u306E\u30B9\u30DE\u30DB\u3067\u899A\u3048\u307E\u3059\uFF09"), React.createElement("input", {
+    id: "note-name",
+    value: name,
+    onChange: e => setName(e.target.value),
+    className: field + ' text-sm',
+    placeholder: "\u4F8B\uFF1A\u30DE\u30DE"
+  }))));
+}
+function NoteBubble({
+  note,
+  onEdit,
+  big
+}) {
+  if (!note) return null;
+  const t = new Date(note.at || Date.now());
+  return React.createElement("button", {
+    onClick: onEdit,
+    className: `relative w-full text-left rounded-3xl bg-honey/20 border-2 border-honey/50 ${big ? 'p-5' : 'px-3 py-2'} flex gap-3 items-start`
+  }, React.createElement("span", {
+    className: `shrink-0 rounded-full bg-honey text-pink flex items-center justify-center ${big ? 'w-10 h-10' : 'w-6 h-6'}`
+  }, React.createElement(Icon, {
+    name: "MessageCircle",
+    size: big ? 20 : 13
+  })), React.createElement("span", {
+    className: "min-w-0 flex-1"
+  }, React.createElement("span", {
+    className: `block whitespace-pre-line font-bold ${big ? 'text-xl leading-relaxed' : 'text-sm line-clamp-2'}`
+  }, note.text), big && React.createElement("span", {
+    className: "block text-xs text-muted mt-1.5 tnum"
+  }, note.name ? `${note.name}より・` : '', t.getMonth() + 1, "/", t.getDate(), " ", String(t.getHours()).padStart(2, '0'), ":", String(t.getMinutes()).padStart(2, '0'), "\u3000\u30BF\u30C3\u30D7\u3067\u7DE8\u96C6")));
+}
+function SlotPicker({
+  slots,
+  setSlots,
+  categories,
+  addCategory,
+  recipes
+}) {
+  const toggle = c => setSlots(slots.includes(c) ? slots.filter(x => x !== c) : [...slots, c]);
+  const preset = p => {
+    p.slots.forEach(c => {
+      if (c !== ANY) addCategory(c);
+    });
+    setSlots(p.slots);
+  };
+  const same = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
+  const none = slots.filter(s => s !== ANY && !recipes.some(r => inSlot(r, s)) && !GENERIC.some(r => inSlot(r, s)));
+  const genOnly = slots.filter(s => s !== ANY && !recipes.some(r => inSlot(r, s)) && GENERIC.some(r => inSlot(r, s)));
+  return React.createElement("div", {
+    className: "flex flex-col gap-2"
+  }, React.createElement("span", {
+    className: "text-xs font-bold text-muted label flex items-center gap-1"
+  }, React.createElement(Icon, {
+    name: "LayoutList",
+    size: 13
+  }), "1\u65E5\u306E\u7D44\u307F\u5408\u308F\u305B\uFF08\u3044\u304F\u3064\u3067\u3082\u9078\u3079\u307E\u3059\uFF09"), React.createElement("div", {
+    className: "scrollx -mx-4 px-4 flex gap-2"
+  }, SLOT_PRESETS.map(p => React.createElement(Chip, {
+    small: true,
+    key: p.label,
+    active: same(slots, p.slots),
+    onClick: () => preset(p)
+  }, p.label))), React.createElement("div", {
+    className: "flex flex-wrap gap-1.5"
+  }, [...categories, ANY].map(c => {
+    const i = slots.indexOf(c);
+    return React.createElement(Chip, {
+      small: true,
+      key: c,
+      active: i >= 0,
+      onClick: () => toggle(c)
+    }, i >= 0 && React.createElement("span", {
+      className: "tnum mr-1 opacity-80"
+    }, i + 1), c);
+  })), React.createElement("p", {
+    className: "rounded-xl bg-sunk px-3 py-2 text-sm font-bold"
+  }, slots.length ? slots.join(' ＋ ') : 'まだ選ばれていません（主菜1品になります）'), genOnly.length > 0 && React.createElement("p", {
+    className: "text-xs text-muted"
+  }, "\u300C", genOnly.join('」「'), "\u300D\u306E\u30DE\u30A4\u30EC\u30B7\u30D4\u304C\u307E\u3060\u306A\u3044\u305F\u3081\u3001\u5B9A\u756A\u30EC\u30B7\u30D4\u3067\u88DC\u3044\u307E\u3059\u3002"), none.length > 0 && React.createElement("p", {
+    className: "text-xs text-danger"
+  }, "\u300C", none.join('」「'), "\u300D\u306E\u30EC\u30B7\u30D4\u304C\u306A\u3044\u305F\u3081\u7A7A\u6B04\u306B\u306A\u308A\u307E\u3059\u3002\u30EC\u30B7\u30D4\u306B\u305D\u306E\u30AB\u30C6\u30B4\u30EA\u3092\u4ED8\u3051\u308B\u3068\u9078\u3070\u308C\u307E\u3059\u3002"));
 }
 function WeekPlan({
   plan,
   setPlan,
   recipes,
   categories,
+  addCategory,
   onOpen,
   onMakeList,
   offDays,
-  setOffDays
+  setOffDays,
+  slots,
+  setSlots,
+  notes,
+  onEditNote
 }) {
   const [mode, setMode] = useState(plan.mode || 'balanced');
   const [fridgeIn, setFridgeIn] = useState('');
   const [fridge, setFridge] = useState(plan.fridge || []);
-  const [catF, setCatF] = useState('');
   const [favBoost, setFavBoost] = useState(true);
-  const [pickDay, setPickDay] = useState(null);
+  const [week, setWeek] = useState(() => (new Date().getDay() + 6) % 7 >= 4 ? 'next' : 'this');
+  const [pick, setPick] = useState(null);
   function addFridge() {
     const parts = fridgeIn.split(/[、,，\s　]+/).map(s => s.trim()).filter(Boolean);
     if (!parts.length) return;
@@ -2921,73 +3526,85 @@ function WeekPlan({
   }
   const cookN = 7 - offDays.length;
   function generate() {
-    const list = mode === 'fridge' ? planFromFridge(recipes, fridge, cookN) : planBalanced(recipes, catF, cookN, favBoost);
     setPlan({
       mode,
       fridge,
-      days: spread(list, offDays),
-      weekStart: nextMonday(),
+      slots,
+      days: planWeek({
+        recipes,
+        mode,
+        fridge,
+        slots,
+        favBoost,
+        off: offDays
+      }),
+      weekStart: week === 'this' ? thisMonday() : nextMonday(),
       createdAt: Date.now()
     });
   }
-  function setDay(idx, entry) {
-    const days = [...plan.days];
-    days[idx] = entry;
+  const days = (plan.days || []).map(normDay);
+  function setDay(idx, d) {
+    const next = days.map((x, i) => i === idx ? d : x);
     setPlan({
       ...plan,
-      days
+      days: next
     });
   }
-  function auto(idx) {
-    const used = new Set(plan.days.map(d => d && d.id));
-    const all = [...recipes.map(r => ({
-      source: 'mine',
-      r
-    })), ...GENERIC.map(r => ({
-      source: 'generic',
-      r
-    }))].filter(x => !used.has(x.r.id));
-    let cands;
-    if (plan.mode === 'fridge') cands = all.map(x => ({
-      ...x,
-      s: scoreRecipe(x.r, plan.fridge || [])
-    })).sort((a, b) => b.s.score - a.s.score + (Math.random() - .5) * .3).slice(0, 5);else {
-      const mine = all.filter(x => x.source === 'mine');
-      const favs = mine.filter(x => x.r.fav);
-      cands = favs.length && Math.random() < .5 ? favs : mine.length ? mine : all;
-    }
-    if (!cands.length) return;
-    const c = cands[Math.floor(Math.random() * cands.length)];
-    setDay(idx, {
-      source: c.source,
-      id: c.r.id,
-      ...(c.s ? {
-        hit: c.s.hit,
-        total: c.s.total
-      } : {})
-    });
-  }
-  function choose(idx, source, r) {
+  const usedIds = () => days.flatMap(d => d.off ? [] : d.items.map(i => i.id)).filter(Boolean);
+  function choose(source, r) {
+    const {
+      day,
+      item
+    } = pick;
+    const d = days[day];
+    const prev = item >= 0 ? d.items[item] : null;
+    const slot = prev ? prev.slot : slots.find(s => inSlot(r, s)) || null;
     const s = plan.mode === 'fridge' ? scoreRecipe(r, plan.fridge || []) : null;
-    setDay(idx, {
+    const it = {
+      slot,
       source,
       id: r.id,
       ...(s ? {
         hit: s.hit,
         total: s.total
       } : {})
+    };
+    const items = d.off ? [it] : item >= 0 ? d.items.map((x, i) => i === item ? it : x) : [...d.items, it];
+    setDay(day, {
+      ...d,
+      off: undefined,
+      items
     });
-    setPickDay(null);
+    setPick(null);
   }
-  const ws = plan.weekStart ? new Date(plan.weekStart) : null;
-  const dateOf = i => {
-    if (!ws) return '';
-    const d = new Date(ws);
-    d.setDate(d.getDate() + i);
-    return `${d.getMonth() + 1}/${d.getDate()}`;
-  };
-  const cooking = (plan.days || []).filter(d => d && !d.off);
-  const totalK = cooking.reduce((s, d) => s + ((findRecipe(d, recipes) || {}).kcal || 0), 0);
+  function auto(day, item) {
+    const d = days[day];
+    const slot = item >= 0 ? d.items[item].slot : d.off ? slots[0] || null : null;
+    const it = autoPick(plan, recipes, slot, usedIds());
+    if (!it) return;
+    if (d.off) {
+      setDay(day, {
+        items: slots.length ? slots.map(sl => autoPick(plan, recipes, sl, usedIds()) || {
+          slot: sl,
+          empty: true
+        }) : [it]
+      });
+      return;
+    }
+    setDay(day, {
+      ...d,
+      items: item >= 0 ? d.items.map((x, i) => i === item ? it : x) : [...d.items, it]
+    });
+  }
+  const ws = plan.weekStart || null;
+  const dateOf = i => ws ? fmtMD(ws + i * 864e5) : '';
+  const todayIdx = planDayIndex(plan, Date.now());
+  const cooking = days.filter(d => !d.off);
+  const totalK = cooking.reduce((s, d) => s + dayItems(d, recipes).reduce((a, {
+    r
+  }) => a + (r && r.kcal || 0), 0), 0);
+  const pd = pick ? days[pick.day] : null;
+  const pItem = pick && pick.item >= 0 && pd && !pd.off ? pd.items[pick.item] : null;
   return React.createElement("div", {
     className: "flex flex-col gap-5"
   }, React.createElement("div", {
@@ -3000,10 +3617,12 @@ function WeekPlan({
     name: ic,
     size: 16
   }), l))), React.createElement("section", {
-    className: "ticket rounded-2xl p-4 flex flex-col gap-3"
-  }, mode === 'fridge' ? React.createElement(React.Fragment, null, React.createElement("p", {
+    className: "ticket rounded-2xl p-4 flex flex-col gap-4"
+  }, mode === 'fridge' ? React.createElement("div", {
+    className: "flex flex-col gap-3"
+  }, React.createElement("p", {
     className: "text-sm text-muted"
-  }, "\u51B7\u8535\u5EAB\u306B\u3042\u308B\u98DF\u6750\u3092\u5165\u308C\u308B\u3068\u3001\u4FDD\u5B58\u30EC\u30B7\u30D4\u304B\u3089\u4F5C\u308C\u308B\u3082\u306E\u3092\u512A\u5148\u3057\u3001\u8DB3\u308A\u306A\u3044\u65E5\u306F\u5B9A\u756A\u30EC\u30B7\u30D4\u3067\u57CB\u3081\u307E\u3059\u3002\u624B\u6301\u3061\u306E\u98DF\u6750\u3092\u591A\u304F\u4F7F\u3046\u3082\u306E\u307B\u3069\u9031\u306E\u524D\u534A\u306B\u4E26\u3073\u307E\u3059\u3002"), React.createElement("div", {
+  }, "\u51B7\u8535\u5EAB\u306E\u98DF\u6750\u3092\u5165\u308C\u308B\u3068\u3001\u305D\u308C\u3092\u4F7F\u3046\u30EC\u30B7\u30D4\u3092\u512A\u5148\u3057\u3066\u9078\u3073\u307E\u3059\u3002\u624B\u6301\u3061\u3092\u591A\u304F\u4F7F\u3046\u65E5\u307B\u3069\u9031\u306E\u524D\u534A\u306B\u4E26\u3073\u307E\u3059\u3002"), React.createElement("div", {
     className: "flex gap-2"
   }, React.createElement("input", {
     id: "fridge",
@@ -3037,24 +3656,15 @@ function WeekPlan({
     size: 14
   })))), !fridge.length && React.createElement("span", {
     className: "text-sm text-muted"
-  }, "\u307E\u3060\u98DF\u6750\u304C\u3042\u308A\u307E\u305B\u3093"))) : React.createElement(React.Fragment, null, React.createElement("p", {
+  }, "\u307E\u3060\u98DF\u6750\u304C\u3042\u308A\u307E\u305B\u3093"))) : React.createElement("p", {
     className: "text-sm text-muted"
-  }, "\u4FDD\u5B58\u30EC\u30B7\u30D4\u304B\u3089\u30AB\u30C6\u30B4\u30EA\u304C\u7D9A\u304B\u306A\u3044\u3088\u3046\u306B\u9078\u3073\u3001\u4F7F\u3046\u6750\u6599\u3092\u307E\u3068\u3081\u3066\u8CB7\u3044\u7269\u30EA\u30B9\u30C8\u306B\u3057\u307E\u3059\u3002"), React.createElement("div", {
-    className: "flex flex-col gap-1.5"
-  }, React.createElement("span", {
-    className: "text-xs font-bold text-muted label"
-  }, "\u3057\u307C\u308A\u8FBC\u307F\uFF08\u4EFB\u610F\uFF09"), React.createElement("div", {
-    className: "scrollx -mx-4 px-4 flex gap-2"
-  }, React.createElement(Chip, {
-    small: true,
-    active: !catF,
-    onClick: () => setCatF('')
-  }, "\u6307\u5B9A\u306A\u3057"), categories.map(c => React.createElement(Chip, {
-    small: true,
-    key: c,
-    active: catF === c,
-    onClick: () => setCatF(catF === c ? '' : c)
-  }, c)))), React.createElement("label", {
+  }, "\u4FDD\u5B58\u30EC\u30B7\u30D4\u304B\u3089\u9078\u3073\u3001\u4F7F\u3046\u6750\u6599\u3092\u307E\u3068\u3081\u3066\u8CB7\u3044\u7269\u30EA\u30B9\u30C8\u306B\u3057\u307E\u3059\u3002"), React.createElement(SlotPicker, {
+    slots: slots,
+    setSlots: setSlots,
+    categories: categories,
+    addCategory: addCategory,
+    recipes: recipes
+  }), mode === 'balanced' && React.createElement("label", {
     className: "flex items-center gap-2 text-sm cursor-pointer"
   }, React.createElement("input", {
     id: "favboost",
@@ -3067,10 +3677,10 @@ function WeekPlan({
     size: 14,
     className: "text-danger",
     fill: "currentColor"
-  }), "\u304A\u6C17\u306B\u5165\u308A\u3092\u591A\u3081\u306B\u5165\u308C\u308B")), React.createElement("div", {
-    className: "flex flex-col gap-1.5 pt-1 border-t border-line/70"
+  }), "\u304A\u6C17\u306B\u5165\u308A\u3092\u591A\u3081\u306B\u5165\u308C\u308B"), React.createElement("div", {
+    className: "flex flex-col gap-1.5"
   }, React.createElement("span", {
-    className: "text-xs font-bold text-muted label pt-2 flex items-center gap-1"
+    className: "text-xs font-bold text-muted label flex items-center gap-1"
   }, React.createElement(Icon, {
     name: "Moon",
     size: 13
@@ -3086,98 +3696,134 @@ function WeekPlan({
     }, d, on && React.createElement("span", {
       className: "text-[9px] font-medium leading-none mt-0.5"
     }, "\u4F11"));
-  })), React.createElement("span", {
-    className: "text-xs text-muted tnum"
-  }, "\u4F5C\u308B\u65E5\u306F\u9031", cookN, "\u65E5\u3067\u3059")), React.createElement("button", {
+  }))), React.createElement("div", {
+    className: "flex flex-col gap-1.5"
+  }, React.createElement("span", {
+    className: "text-xs font-bold text-muted label flex items-center gap-1"
+  }, React.createElement(Icon, {
+    name: "CalendarDays",
+    size: 13
+  }), "\u3044\u3064\u306E\u732E\u7ACB\uFF1F"), React.createElement("div", {
+    className: "grid grid-cols-2 gap-2"
+  }, [['this', '今週', thisMonday()], ['next', '来週', nextMonday()]].map(([k, l, t]) => React.createElement(Chip, {
+    key: k,
+    active: week === k,
+    onClick: () => setWeek(k)
+  }, l, "\uFF08", fmtMD(t), "\u301C", fmtMD(t + 6 * 864e5), "\uFF09")))), React.createElement("button", {
     onClick: generate,
     disabled: mode === 'fridge' && !fridge.length || cookN === 0,
     className: btnPrimary
   }, React.createElement(Icon, {
     name: "Sparkles",
     size: 18
-  }), mode === 'fridge' ? 'この食材で1週間を組む' : '1週間の献立をつくる')), plan.days && plan.days.length > 0 && React.createElement("section", {
+  }), "1\u9031\u9593\u306E\u732E\u7ACB\u3092\u3064\u304F\u308B")), days.length > 0 && React.createElement("section", {
     className: "flex flex-col gap-3"
   }, React.createElement("div", {
     className: "flex items-end justify-between gap-2"
   }, React.createElement("div", null, React.createElement("h2", {
     className: "font-display text-xl font-bold"
-  }, "\u4ECA\u9031\u306E\u732E\u7ACB"), React.createElement("p", {
+  }, "\u3053\u306E\u9031\u306E\u732E\u7ACB"), React.createElement("p", {
     className: "text-xs text-muted tnum"
   }, ws ? `${dateOf(0)}（月）〜 ${dateOf(6)}（日）` : '', "\u30FB", plan.mode === 'fridge' ? '食材から提案' : 'バランス自動')), React.createElement("span", {
     className: "text-xs text-muted tnum text-right"
-  }, "\u4F5C\u308B\u65E5 ", cooking.length, "\u65E5", React.createElement("br", null), "\u5E73\u5747 ", cooking.length ? Math.round(totalK / cooking.length) : 0, " kcal")), React.createElement("ol", {
-    className: "flex flex-col gap-2"
-  }, plan.days.map((d, idx) => {
-    const r = findRecipe(d, recipes);
-    const off = !d || d.off;
+  }, "\u4F5C\u308B\u65E5 ", cooking.length, "\u65E5", React.createElement("br", null), "1\u65E5 \u7D04", cooking.length ? Math.round(totalK / cooking.length) : 0, " kcal")), React.createElement("ol", {
+    className: "flex flex-col gap-3"
+  }, days.map((d, idx) => {
+    const key = ws ? dateKey(ws + idx * 864e5) : null;
+    const note = key && notes[key];
+    const isToday = idx === todayIdx;
+    const label = `${DAYS[idx]}曜（${dateOf(idx)}）`;
     return React.createElement("li", {
       key: idx,
-      className: `rounded-2xl flex items-stretch overflow-hidden ${off ? 'stamp bg-sunk/50' : 'ticket'}`
+      className: `rounded-2xl overflow-hidden ${d.off ? 'stamp bg-sunk/50' : 'ticket'} ${isToday ? 'ring-2 ring-honey' : ''}`
     }, React.createElement("div", {
-      className: `w-14 shrink-0 flex flex-col items-center justify-center ${off ? '' : idx >= 5 ? 'bg-honey/15' : 'bg-sunk'}`
+      className: `flex items-center gap-2 px-3 py-2 ${d.off ? '' : 'bg-sunk/70'}`
     }, React.createElement("span", {
-      className: `font-display text-xl font-bold ${off ? 'text-muted' : ''}`
+      className: `font-display text-lg font-bold ${d.off ? 'text-muted' : ''}`
     }, DAYS[idx]), React.createElement("span", {
-      className: "text-[11px] text-muted tnum"
-    }, dateOf(idx))), off ? React.createElement("div", {
-      className: "flex-1 min-w-0 flex items-center gap-3 p-2.5 text-muted"
-    }, React.createElement("span", {
-      className: "w-12 h-12 rounded-xl shrink-0 border border-line flex items-center justify-center"
+      className: "text-xs text-muted tnum"
+    }, dateOf(idx)), isToday && React.createElement("span", {
+      className: "rounded-full bg-honey text-pink text-[10px] font-bold px-2 py-0.5"
+    }, "\u4ECA\u65E5"), React.createElement("span", {
+      className: "flex-1"
+    }), key && React.createElement("button", {
+      onClick: () => onEditNote(key, label),
+      "aria-label": `${label}の伝えたいこと`,
+      className: `p-1.5 rounded-lg ${note ? 'text-honey' : 'text-muted hover:text-ink'}`
     }, React.createElement(Icon, {
-      name: "Moon",
-      size: 20
-    })), React.createElement("div", {
-      className: "min-w-0"
-    }, React.createElement("p", {
-      className: "font-bold"
-    }, "\u4F5C\u3089\u306A\u3044\u65E5"), React.createElement("p", {
-      className: "text-xs"
-    }, "\u5916\u98DF\u30FB\u4F5C\u308A\u7F6E\u304D\u30FB\u304A\u4F11\u307F"))) : React.createElement("button", {
-      onClick: () => r && onOpen(r),
-      className: "flex-1 min-w-0 flex items-center gap-3 p-2.5 text-left"
-    }, React.createElement(Photo, {
-      r: r,
-      className: "w-12 h-12 rounded-xl shrink-0"
-    }), React.createElement("div", {
-      className: "min-w-0"
-    }, React.createElement("p", {
-      className: "font-bold leading-snug truncate"
-    }, r ? r.name : '未設定', r && r.fav && React.createElement(Icon, {
-      name: "Heart",
-      size: 12,
-      fill: "currentColor",
-      className: "inline ml-1 -mt-0.5 text-danger"
-    })), React.createElement("p", {
-      className: "text-xs text-muted flex flex-wrap gap-x-2"
-    }, React.createElement("span", {
-      className: d.source === 'generic' ? 'text-honey font-bold' : ''
-    }, d.source === 'generic' ? '定番' : 'マイレシピ'), r && r.kcal ? React.createElement("span", {
-      className: "tnum"
-    }, r.kcal, "kcal") : null, plan.mode === 'fridge' && d.total ? React.createElement("span", {
-      className: "tnum"
-    }, "\u624B\u6301\u3061 ", d.hit, "/", d.total) : null))), React.createElement("div", {
-      className: "flex flex-col justify-center gap-1 pr-2 pl-1"
-    }, off ? React.createElement("button", {
-      onClick: () => auto(idx),
-      className: "rounded-lg border border-line bg-surface px-2.5 py-1.5 text-xs font-bold flex items-center gap-1"
+      name: "MessageCircle",
+      size: 17
+    })), d.off ? React.createElement("button", {
+      onClick: () => auto(idx, -1),
+      className: "rounded-lg border border-line bg-surface px-2.5 py-1 text-xs font-bold flex items-center gap-1"
     }, React.createElement(Icon, {
       name: "CookingPot",
       size: 14
     }), "\u4F5C\u308B") : React.createElement(React.Fragment, null, React.createElement("button", {
-      onClick: () => setPickDay(idx),
-      className: "rounded-lg border border-line bg-surface px-2.5 py-1.5 text-xs font-bold flex items-center gap-1 hover:border-primary/60"
+      onClick: () => setPick({
+        day: idx,
+        item: -1
+      }),
+      className: "rounded-lg border border-line bg-surface px-2 py-1 text-xs font-bold flex items-center gap-1"
     }, React.createElement(Icon, {
-      name: "ArrowLeftRight",
-      size: 14
-    }), "\u5909\u66F4"), React.createElement("button", {
+      name: "Plus",
+      size: 13
+    }), "\u54C1\u3092\u8FFD\u52A0"), React.createElement("button", {
       onClick: () => setDay(idx, {
         off: true
       }),
-      className: "rounded-lg px-2.5 py-1 text-[11px] text-muted flex items-center gap-1 hover:text-ink"
+      className: "rounded-lg px-2 py-1 text-xs text-muted flex items-center gap-1 hover:text-ink"
     }, React.createElement(Icon, {
       name: "Moon",
-      size: 12
-    }), "\u4F11\u307F"))));
+      size: 13
+    }), "\u4F11\u307F"))), d.off ? React.createElement("p", {
+      className: "px-3 pb-3 text-sm text-muted"
+    }, "\u4F5C\u3089\u306A\u3044\u65E5\uFF08\u5916\u98DF\u30FB\u4F5C\u308A\u7F6E\u304D\u30FB\u304A\u4F11\u307F\uFF09") : React.createElement("ul", null, dayItems(d, recipes).map(({
+      it,
+      r
+    }, k) => React.createElement("li", {
+      key: k,
+      className: "flex items-center gap-2 px-3 py-2 border-t border-line/70"
+    }, React.createElement("button", {
+      onClick: () => r && onOpen(r),
+      className: "flex-1 min-w-0 flex items-center gap-3 text-left"
+    }, React.createElement(Photo, {
+      r: r,
+      className: "w-12 h-12 rounded-xl shrink-0"
+    }), React.createElement("span", {
+      className: "min-w-0"
+    }, React.createElement("span", {
+      className: "flex items-center gap-1.5"
+    }, slotLabel(it.slot) && React.createElement("span", {
+      className: "text-[10px] font-bold rounded bg-primary/10 text-primary px-1.5"
+    }, it.slot), it.source === 'generic' && React.createElement("span", {
+      className: "text-[10px] font-bold text-honey"
+    }, "\u5B9A\u756A")), React.createElement("span", {
+      className: "block font-bold leading-snug truncate"
+    }, r ? r.name : '該当するレシピがありません', r && r.fav && React.createElement(Icon, {
+      name: "Heart",
+      size: 12,
+      fill: "currentColor",
+      className: "inline ml-1 -mt-0.5 text-danger"
+    })), React.createElement("span", {
+      className: "block text-xs text-muted tnum"
+    }, r && r.kcal ? `${r.kcal}kcal` : '', plan.mode === 'fridge' && it.total ? `　手持ち ${it.hit || 0}/${it.total}` : ''))), React.createElement("button", {
+      onClick: () => setPick({
+        day: idx,
+        item: k
+      }),
+      className: "shrink-0 rounded-lg border border-line bg-surface px-2.5 py-1.5 text-xs font-bold flex items-center gap-1 hover:border-primary/60"
+    }, React.createElement(Icon, {
+      name: "ArrowLeftRight",
+      size: 14
+    }), "\u5909\u66F4"))), !d.items.length && React.createElement("li", {
+      className: "px-3 py-3 border-t border-line/70 text-sm text-muted"
+    }, "\u54C1\u304C\u3042\u308A\u307E\u305B\u3093\u3002\u300C\u54C1\u3092\u8FFD\u52A0\u300D\u304B\u3089\u9078\u3093\u3067\u304F\u3060\u3055\u3044\u3002")), note && React.createElement("div", {
+      className: "px-3 pb-3"
+    }, React.createElement(NoteBubble, {
+      note: note,
+      onEdit: () => onEditNote(key, label)
+    })));
   })), React.createElement("button", {
     onClick: onMakeList,
     disabled: !cooking.length,
@@ -3186,23 +3832,168 @@ function WeekPlan({
     name: "ShoppingCart",
     size: 18
   }), "\u3053\u306E\u732E\u7ACB\u3067\u8CB7\u3044\u7269\u30EA\u30B9\u30C8\u3092\u4F5C\u308B")), React.createElement(RecipePicker, {
-    open: pickDay != null,
-    day: pickDay,
-    onClose: () => setPickDay(null),
+    open: !!pick,
+    slot: pItem ? pItem.slot : null,
     recipes: recipes,
-    isOff: pickDay != null && plan.days[pickDay] && plan.days[pickDay].off,
-    onChoose: (s, r) => choose(pickDay, s, r),
-    onAuto: () => {
-      auto(pickDay);
-      setPickDay(null);
-    },
-    onOff: () => {
-      setDay(pickDay, {
+    onClose: () => setPick(null),
+    title: pick ? `${DAYS[pick.day]}曜日・${pItem ? (slotLabel(pItem.slot) || 'この品') + 'を変更' : '品を追加'}` : '',
+    onChoose: choose,
+    onAuto: pick && pick.item >= 0 ? () => {
+      auto(pick.day, pick.item);
+      setPick(null);
+    } : null,
+    onRemove: pItem ? () => {
+      setDay(pick.day, {
+        ...pd,
+        items: pd.items.filter((_, i) => i !== pick.item)
+      });
+      setPick(null);
+    } : null,
+    onOff: pick ? () => {
+      setDay(pick.day, {
         off: true
       });
-      setPickDay(null);
-    }
+      setPick(null);
+    } : null
   }));
+}
+function TodayView({
+  plan,
+  recipes,
+  notes,
+  onOpen,
+  goPlan,
+  onEditNote,
+  onShare
+}) {
+  const now = Date.now();
+  const t = new Date(now);
+  const key = dateKey(now);
+  const idx = planDayIndex(plan, now);
+  const d = idx >= 0 ? normDay(plan.days[idx]) : null;
+  const list = d && !d.off ? dayItems(d, recipes).filter(x => x.r) : [];
+  const note = notes[key];
+  const label = `今日（${t.getMonth() + 1}/${t.getDate()}）`;
+  const tmr = planDayIndex(plan, now + 864e5);
+  const td = tmr >= 0 ? normDay(plan.days[tmr]) : null;
+  const tList = td && !td.off ? dayItems(td, recipes).filter(x => x.r) : [];
+  const kcal = list.reduce((s, {
+    r
+  }) => s + (r.kcal || 0), 0);
+  return React.createElement("div", {
+    className: "flex flex-col gap-5"
+  }, React.createElement("div", {
+    className: "text-center pt-1"
+  }, React.createElement("p", {
+    className: "text-sm font-bold text-muted tnum"
+  }, t.getMonth() + 1, "\u6708", t.getDate(), "\u65E5\uFF08", DAYS[(t.getDay() + 6) % 7], "\uFF09"), React.createElement("h2", {
+    className: "font-display text-3xl font-black flex items-center justify-center gap-2 mt-0.5"
+  }, React.createElement(Icon, {
+    name: "Sparkles",
+    size: 26,
+    className: "text-honey"
+  }), "\u4ECA\u65E5\u306E\u732E\u7ACB", React.createElement(Icon, {
+    name: "Sparkles",
+    size: 26,
+    className: "text-honey"
+  })), list.length > 0 && React.createElement("p", {
+    className: "text-xs text-muted tnum mt-1"
+  }, list.length, "\u54C1\u30FB\u5408\u8A08 \u7D04", kcal, " kcal\uFF08\u76EE\u5B89\uFF09")), note ? React.createElement(NoteBubble, {
+    note: note,
+    big: true,
+    onEdit: () => onEditNote(key, label)
+  }) : React.createElement("button", {
+    onClick: () => onEditNote(key, label),
+    className: "stamp rounded-3xl p-4 text-muted flex items-center justify-center gap-2 font-bold"
+  }, React.createElement(Icon, {
+    name: "MessageCircle",
+    size: 18
+  }), "\u4F1D\u3048\u305F\u3044\u3053\u3068\u3092\u66F8\u304F"), list.length > 0 ? React.createElement("div", {
+    className: "flex flex-col gap-3"
+  }, list.map(({
+    it,
+    r
+  }, k) => React.createElement("button", {
+    key: k,
+    onClick: () => onOpen(r),
+    className: `ticket rounded-3xl overflow-hidden text-left ${k === 0 ? '' : 'flex items-center gap-3 p-2.5'}`
+  }, k === 0 ? React.createElement(React.Fragment, null, React.createElement(Photo, {
+    r: r,
+    className: "w-full aspect-[4/3]"
+  }), React.createElement("div", {
+    className: "p-4 flex flex-col gap-1"
+  }, slotLabel(it.slot) && React.createElement("span", {
+    className: "self-start text-xs font-bold rounded-full bg-primary text-pink px-2.5 py-0.5"
+  }, it.slot), React.createElement("span", {
+    className: "font-display text-2xl font-bold leading-snug"
+  }, r.name), React.createElement("span", {
+    className: "text-sm text-muted flex items-center gap-1"
+  }, r.kcal ? React.createElement(React.Fragment, null, React.createElement(Icon, {
+    name: "Flame",
+    size: 14,
+    className: "text-honey"
+  }), r.kcal, " kcal") : null, React.createElement("span", {
+    className: "ml-auto text-primary font-bold flex items-center gap-0.5"
+  }, "\u4F5C\u308A\u65B9\u3092\u898B\u308B", React.createElement(Icon, {
+    name: "ChevronRight",
+    size: 16
+  }))))) : React.createElement(React.Fragment, null, React.createElement(Photo, {
+    r: r,
+    className: "w-20 h-20 rounded-2xl shrink-0"
+  }), React.createElement("span", {
+    className: "min-w-0 flex-1"
+  }, slotLabel(it.slot) && React.createElement("span", {
+    className: "text-xs font-bold rounded-full bg-primary/10 text-primary px-2 py-0.5"
+  }, it.slot), React.createElement("span", {
+    className: "block font-display text-lg font-bold leading-snug mt-1"
+  }, r.name), React.createElement("span", {
+    className: "block text-xs text-muted tnum"
+  }, r.kcal ? `${r.kcal} kcal` : '')), React.createElement(Icon, {
+    name: "ChevronRight",
+    size: 18,
+    className: "text-muted mr-1"
+  }))))) : React.createElement("div", {
+    className: "ticket rounded-3xl p-6 text-center flex flex-col items-center gap-3"
+  }, React.createElement("span", {
+    className: "w-14 h-14 rounded-full bg-sunk flex items-center justify-center text-muted"
+  }, React.createElement(Icon, {
+    name: d && d.off ? 'Moon' : 'CalendarDays',
+    size: 26
+  })), React.createElement("p", {
+    className: "font-bold"
+  }, d && d.off ? '今日は作らない日です' : '今日の献立はまだ決まっていません'), React.createElement("p", {
+    className: "text-sm text-muted"
+  }, d && d.off ? '外食・作り置き・お休みの日。メニューを入れるときは献立タブから。' : '献立タブで「今週」の献立をつくると、ここに表示されます。'), React.createElement("button", {
+    className: btnGhost,
+    onClick: goPlan
+  }, React.createElement(Icon, {
+    name: "CalendarDays",
+    size: 16
+  }), "\u732E\u7ACB\u3092\u3072\u3089\u304F")), React.createElement("button", {
+    onClick: onShare,
+    className: btnPrimary
+  }, React.createElement(Icon, {
+    name: "Send",
+    size: 18
+  }), "\u4ECA\u65E5\u306E\u732E\u7ACB\u3092LINE\u306A\u3069\u3067\u77E5\u3089\u305B\u308B"), tList.length > 0 && React.createElement("section", {
+    className: "rounded-2xl bg-sunk/70 p-4"
+  }, React.createElement("h3", {
+    className: "text-xs font-bold text-muted label mb-2"
+  }, "\u660E\u65E5\u306E\u732E\u7ACB"), React.createElement("ul", {
+    className: "flex flex-col gap-1"
+  }, tList.map(({
+    it,
+    r
+  }, k) => React.createElement("li", {
+    key: k
+  }, React.createElement("button", {
+    onClick: () => onOpen(r),
+    className: "flex items-center gap-2 text-left w-full"
+  }, slotLabel(it.slot) && React.createElement("span", {
+    className: "text-[10px] font-bold rounded bg-surface px-1.5"
+  }, it.slot), React.createElement("span", {
+    className: "truncate font-medium"
+  }, r.name)))))));
 }
 function Shopping({
   items,
@@ -3369,6 +4160,7 @@ function Shopping({
 }
 const sendable = r => ({
   name: r.name,
+  memo: r.memo || '',
   kcal: r.kcal || null,
   kcalBasis: basisOf(r),
   categories: r.categories || [],
@@ -3431,6 +4223,7 @@ function recipeText(r) {
     L.push('', '■作り方');
     r.steps.forEach((s, k) => L.push(`${k + 1}. ${s}`));
   }
+  if (r.memo) L.push('', '■ポイント', r.memo);
   if (r.instaUrl) L.push('', 'Instagram：' + r.instaUrl);
   return L.join('\n');
 }
@@ -3583,6 +4376,97 @@ function ReceiveSheet({
   }, i.amount))), r.ingredients.length > 8 && React.createElement("li", {
     className: "px-4 py-1.5 text-muted"
   }, "\u307B\u304B", r.ingredients.length - 8, "\u54C1"))));
+}
+const FONT_OPTIONS = [{
+  id: 'rounded',
+  label: 'まるもじ',
+  desc: '丸くてやさしい・いちばん読みやすい',
+  family: '"M PLUS Rounded 1c"',
+  css: 'M+PLUS+Rounded+1c:wght@400;500;700;800;900'
+}, {
+  id: 'maru',
+  label: 'ふんわり',
+  desc: 'やわらかい丸ゴシック',
+  family: '"Zen Maru Gothic"',
+  css: 'Zen+Maru+Gothic:wght@500;700;900'
+}, {
+  id: 'kiwi',
+  label: 'てがき風',
+  desc: '手書きのようなかわいさ',
+  family: '"Kiwi Maru"',
+  css: 'Kiwi+Maru:wght@400;500'
+}, {
+  id: 'kaku',
+  label: 'くっきり',
+  desc: 'すっきりした角ゴシック',
+  family: '"Zen Kaku Gothic New"',
+  css: 'Zen+Kaku+Gothic+New:wght@400;500;700;900'
+}];
+function ensureFont(id) {
+  const f = FONT_OPTIONS.find(x => x.id === id);
+  if (!f || document.getElementById('font-' + id)) return;
+  const l = document.createElement('link');
+  l.id = 'font-' + id;
+  l.rel = 'stylesheet';
+  l.href = `https://fonts.googleapis.com/css2?family=${f.css}&display=swap`;
+  document.head.appendChild(l);
+}
+function applyDisplay(d) {
+  const r = document.documentElement;
+  r.dataset.font = d.font || 'rounded';
+  r.dataset.size = d.size || 'normal';
+  ensureFont(r.dataset.font);
+}
+function DisplaySection({
+  display,
+  setDisplay
+}) {
+  useEffect(() => {
+    FONT_OPTIONS.forEach(f => ensureFont(f.id));
+  }, []);
+  return React.createElement("section", {
+    className: "flex flex-col gap-3"
+  }, React.createElement("h3", {
+    className: "font-display font-bold flex items-center gap-2"
+  }, React.createElement(Icon, {
+    name: "Type",
+    size: 18,
+    className: "text-primary"
+  }), "\u6587\u5B57\u306E\u7A2E\u985E\u3068\u5927\u304D\u3055"), React.createElement("div", {
+    className: "grid grid-cols-2 gap-2"
+  }, FONT_OPTIONS.map(f => React.createElement("button", {
+    key: f.id,
+    onClick: () => setDisplay({
+      ...display,
+      font: f.id
+    }),
+    "aria-pressed": display.font === f.id,
+    className: `rounded-2xl border p-3 text-left ${display.font === f.id ? 'border-primary bg-primary/10 ring-1 ring-primary' : 'border-line bg-surface'}`
+  }, React.createElement("span", {
+    className: "block text-lg",
+    style: {
+      fontFamily: f.family + ',sans-serif',
+      fontWeight: 700
+    }
+  }, f.label), React.createElement("span", {
+    className: "block text-sm",
+    style: {
+      fontFamily: f.family + ',sans-serif'
+    }
+  }, "\u4ECA\u65E5\u306F\u89AA\u5B50\u4E3C\u3068\u5473\u564C\u6C41"), React.createElement("span", {
+    className: "block text-[11px] text-muted mt-0.5"
+  }, f.desc)))), React.createElement("div", {
+    className: "grid grid-cols-2 gap-2"
+  }, [['normal', 'ふつう'], ['large', '大きめ']].map(([k, l]) => React.createElement(Chip, {
+    key: k,
+    active: (display.size || 'normal') === k,
+    onClick: () => setDisplay({
+      ...display,
+      size: k
+    })
+  }, "\u6587\u5B57\uFF1A", l))), React.createElement("p", {
+    className: "text-xs text-muted"
+  }, "\u3053\u306E\u8A2D\u5B9A\u306F\u3053\u306E\u30B9\u30DE\u30DB\u3060\u3051\u306B\u53CD\u6620\u3055\u308C\u307E\u3059\u3002"));
 }
 function FamilySection({
   backend,
@@ -3856,6 +4740,8 @@ function JoinSheet({
   }, err)));
 }
 function Settings({
+  display,
+  setDisplay,
   open,
   onClose,
   categories,
@@ -3905,6 +4791,9 @@ function Settings({
     toast: toast,
     askConfirm: askConfirm,
     localSnapshot: localSnapshot
+  }), React.createElement(DisplaySection, {
+    display: display,
+    setDisplay: setDisplay
   }), React.createElement("section", {
     className: "flex flex-col gap-3"
   }, React.createElement("h3", {
@@ -4055,7 +4944,12 @@ function App() {
   const [recipes, setRecipes] = useState([]);
   const [meta, setMeta] = useState({});
   const [shopRaw, setShopRaw] = useState([]);
-  const [tab, setTab] = useState(LS.get('tab', 'list'));
+  const [tab, setTab] = useState(LS.get('tab', 'today'));
+  const [display, setDisplayS] = useState(() => LS.get('display', {
+    font: 'rounded',
+    size: 'normal'
+  }));
+  const [noteSheet, setNoteSheet] = useState(null);
   const [detail, setDetail] = useState(null);
   const [editing, setEditing] = useState(null);
   const [settings, setSettings] = useState(false);
@@ -4126,6 +5020,20 @@ function App() {
     days: []
   };
   const offDays = meta.offDays || [];
+  const slots = meta.slots || plan.slots || ['主菜'];
+  const notes = meta.notes || {};
+  const deviceId = useMemo(() => {
+    let d = LS.get('device', '');
+    if (!d) {
+      d = uid();
+      LS.set('device', d);
+    }
+    return d;
+  }, []);
+  const todayKey = dateKey(Date.now());
+  const todayNote = notes[todayKey];
+  const [seenAt, setSeenAt] = useState(() => LS.get('noteSeen', 0));
+  const unseen = !!(todayNote && todayNote.by !== deviceId && (todayNote.at || 0) > seenAt);
   const shopping = useMemo(() => [...shopRaw].sort((a, b) => (a.order || 0) - (b.order || 0)), [shopRaw]);
   snapRef.current = {
     recipes,
@@ -4173,14 +5081,30 @@ function App() {
         if (!s.meta.seeded && s.recipes.length === 0) {
           for (const r of SAMPLES) await backend.putRecipe(r);
           await backend.setMeta('seeded', true);
-          await backend.setMeta('offDays', [6]);
+          await backend.setMeta('offDays', []);
+          await backend.setMeta('slots', ['主菜', '副菜']);
           const p = {
             mode: 'balanced',
             fridge: [],
-            days: spread(planBalanced(SAMPLES, '', 6, true), [6]),
-            weekStart: nextMonday(),
+            slots: ['主菜', '副菜'],
+            days: planWeek({
+              recipes: SAMPLES,
+              mode: 'balanced',
+              slots: ['主菜', '副菜'],
+              favBoost: true,
+              off: []
+            }),
+            weekStart: thisMonday(),
             createdAt: Date.now()
           };
+          await backend.setMeta('notes', {
+            [dateKey(Date.now())]: {
+              text: '（見本）ポン酢かソースをかけてね！\nご飯は炊飯器にあります',
+              at: Date.now(),
+              by: 'sample',
+              name: ''
+            }
+          });
           await backend.setMeta('plan', p);
           await backend.shopReplace(buildShopping(p, SAMPLES, []));
         }
@@ -4214,6 +5138,55 @@ function App() {
     }));
     wr(backend.setMeta('offDays', o));
   };
+  const setSlots = v => {
+    setMeta(m => ({
+      ...m,
+      slots: v
+    }));
+    wr(backend.setMeta('slots', v));
+  };
+  const setDisplay = d => {
+    setDisplayS(d);
+    LS.set('display', d);
+    applyDisplay(d);
+  };
+  function setNote(key, val) {
+    const cutoff = dateKey(Date.now() - 30 * 864e5);
+    const next = {};
+    Object.entries(notes).forEach(([k, v]) => {
+      if (k >= cutoff) next[k] = v;
+    });
+    if (val) next[key] = val;else delete next[key];
+    setMeta(m => ({
+      ...m,
+      notes: next
+    }));
+    wr(backend.setMeta('notes', next));
+  }
+  useEffect(() => {
+    if (tab === 'today' && todayNote && (todayNote.at || 0) > seenAt) {
+      setSeenAt(todayNote.at);
+      LS.set('noteSeen', todayNote.at);
+    }
+  }, [tab, todayNote && todayNote.at]);
+  const lastToast = useRef(0);
+  useEffect(() => {
+    if (unseen && tab !== 'today' && lastToast.current !== todayNote.at) {
+      lastToast.current = todayNote.at;
+      toast(`${todayNote.name ? todayNote.name + 'から' : ''}今日の伝えたいことが届きました`);
+    }
+  }, [unseen, todayNote && todayNote.at]);
+  function shareToday() {
+    const now = Date.now();
+    const t = new Date(now);
+    const i = planDayIndex(plan, now);
+    const d = i >= 0 ? normDay(plan.days[i]) : null;
+    const L = [`【今日の献立】${t.getMonth() + 1}/${t.getDate()}（${DAYS[(t.getDay() + 6) % 7]}）`];
+    if (d && !d.off) L.push(menuText(d, recipes) || '（まだ決まっていません）');else L.push(d ? '今日は作らない日です' : '（まだ決まっていません）');
+    if (todayNote && todayNote.text) L.push('', `■伝えたいこと${todayNote.name ? '（' + todayNote.name + 'より）' : ''}`, todayNote.text);
+    L.push('', '献立帖で見る：' + location.origin + location.pathname);
+    shareOrCopy(L.join('\n'), '今日の献立', toast);
+  }
   function setShopping(next) {
     const base = Date.now();
     next = next.map((it, i) => ({
@@ -4319,7 +5292,9 @@ function App() {
       categories,
       plan,
       shopping,
-      offDays
+      offDays,
+      slots,
+      notes
     };
     const json = JSON.stringify(data);
     const d = new Date();
@@ -4372,6 +5347,18 @@ function App() {
     if (d.plan && Array.isArray(d.plan.days)) setPlan(d.plan);
     if (Array.isArray(d.shopping)) setShopping(d.shopping);
     if (Array.isArray(d.offDays)) setOffDays(d.offDays);
+    if (Array.isArray(d.slots)) setSlots(d.slots);
+    if (d.notes && typeof d.notes === 'object') {
+      const nx = {
+        ...notes,
+        ...d.notes
+      };
+      setMeta(m => ({
+        ...m,
+        notes: nx
+      }));
+      wr(backend.setMeta('notes', nx));
+    }
     toast(d.kind === 'recipe' ? `「${(d.recipes[0] || {}).name || 'レシピ'}」を追加しました` : `${n}件のレシピを復元しました`);
     setSettings(false);
   }
@@ -4385,8 +5372,9 @@ function App() {
   }
   const detailObj = detail && !detail.generic ? recipes.find(r => r.id === detail.id) || null : detail;
   const shopLeft = shopping.filter(i => !i.checked).length;
-  const TABS = [['list', 'BookOpen', 'レシピ'], ['new', 'PlusCircle', '登録'], ['plan', 'CalendarDays', '献立'], ['shop', 'ShoppingCart', '買い物']];
+  const TABS = [['today', 'Sun', '今日'], ['list', 'BookOpen', 'レシピ'], ['new', 'PlusCircle', '登録'], ['plan', 'CalendarDays', '献立'], ['shop', 'ShoppingCart', '買い物']];
   const titles = {
+    today: '今日の献立',
     list: 'レシピ一覧',
     new: editing && editing.id ? 'レシピを編集' : '新規登録',
     plan: '1週間献立',
@@ -4452,7 +5440,18 @@ function App() {
     style: {
       paddingBottom: 'calc(96px + env(safe-area-inset-bottom,0px))'
     }
-  }, tab === 'list' && React.createElement(RecipeList, {
+  }, tab === 'today' && React.createElement(TodayView, {
+    plan: plan,
+    recipes: recipes,
+    notes: notes,
+    onOpen: setDetail,
+    goPlan: () => go('plan'),
+    onEditNote: (key, label) => setNoteSheet({
+      key,
+      label
+    }),
+    onShare: shareToday
+  }), tab === 'list' && React.createElement(RecipeList, {
     recipes: recipes,
     categories: categories,
     onOpen: setDetail,
@@ -4479,7 +5478,15 @@ function App() {
     onOpen: setDetail,
     onMakeList: makeList,
     offDays: offDays,
-    setOffDays: setOffDays
+    setOffDays: setOffDays,
+    slots: slots,
+    setSlots: setSlots,
+    addCategory: addCategory,
+    notes: notes,
+    onEditNote: (key, label) => setNoteSheet({
+      key,
+      label
+    })
   }), tab === 'shop' && React.createElement(Shopping, {
     items: shopping,
     setItems: setShopping,
@@ -4493,7 +5500,7 @@ function App() {
     },
     "aria-label": "\u30E1\u30A4\u30F3"
   }, React.createElement("div", {
-    className: "gutter max-w-md mx-auto grid grid-cols-4"
+    className: "gutter max-w-md mx-auto grid grid-cols-5"
   }, TABS.map(([k, ic, l]) => React.createElement("button", {
     key: k,
     onClick: () => {
@@ -4503,11 +5510,14 @@ function App() {
     "aria-current": tab === k ? 'page' : undefined,
     className: `relative flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-bold ${tab === k ? 'text-primary' : 'text-muted'}`
   }, React.createElement("span", {
-    className: `px-4 py-1 rounded-full ${tab === k ? 'bg-primary/10' : ''}`
+    className: `px-3 py-1 rounded-full ${tab === k ? 'bg-primary/10' : ''}`
   }, React.createElement(Icon, {
     name: ic,
     size: 22
-  })), l, k === 'shop' && shopLeft > 0 && React.createElement("span", {
+  })), l, k === 'today' && unseen && React.createElement("span", {
+    className: "absolute top-2 right-[26%] w-2.5 h-2.5 rounded-full bg-danger ring-2 ring-surface",
+    "aria-label": "\u65B0\u3057\u3044\u4F1D\u3048\u305F\u3044\u3053\u3068"
+  }), k === 'shop' && shopLeft > 0 && React.createElement("span", {
     className: "absolute top-1.5 right-[22%] min-w-[18px] h-[18px] px-1 rounded-full bg-honey text-pink text-[10px] flex items-center justify-center tnum"
   }, shopLeft))))), toastMsg && React.createElement("div", {
     className: "fixed inset-x-0 z-[60] flex justify-center gutter pointer-events-none",
@@ -4547,6 +5557,8 @@ function App() {
     onAdd: () => addReceived(false),
     onEditFirst: () => addReceived(true)
   }), React.createElement(Settings, {
+    display: display,
+    setDisplay: setDisplay,
     open: settings,
     onClose: () => setSettings(false),
     categories: categories,
@@ -4567,11 +5579,32 @@ function App() {
       setInvite(null);
       history.replaceState(null, '', location.pathname + location.search);
     }
-  }), invite && backend.kind === 'cloud' && LS.get('share', {}).code === invite.code && (history.replaceState(null, '', location.pathname + location.search), null), React.createElement(Confirm, {
+  }), invite && backend.kind === 'cloud' && LS.get('share', {}).code === invite.code && (history.replaceState(null, '', location.pathname + location.search), null), React.createElement(NoteSheet, {
+    state: noteSheet,
+    note: noteSheet && notes[noteSheet.key],
+    onClose: () => setNoteSheet(null),
+    onSave: (text, name) => {
+      setNote(noteSheet.key, {
+        text,
+        name,
+        at: Date.now(),
+        by: deviceId
+      });
+      toast('伝えたいことを残しました');
+    },
+    onDelete: () => {
+      setNote(noteSheet.key, null);
+      toast('消しました');
+    }
+  }), React.createElement(Confirm, {
     state: confirm,
     onCancel: () => setConfirm(null)
   }));
 }
+applyDisplay(LS.get('display', {
+  font: 'rounded',
+  size: 'normal'
+}));
 ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App, null));
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   addEventListener('load', () => {
