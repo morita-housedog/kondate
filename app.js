@@ -3887,7 +3887,7 @@ function TodayView({
   }, React.createElement("p", {
     className: "text-sm font-bold text-muted tnum"
   }, t.getMonth() + 1, "\u6708", t.getDate(), "\u65E5\uFF08", DAYS[(t.getDay() + 6) % 7], "\uFF09"), React.createElement("h2", {
-    className: "font-display text-3xl font-black flex items-center justify-center gap-2 mt-0.5"
+    className: "font-display text-3xl font-bold flex items-center justify-center gap-2 mt-0.5"
   }, React.createElement(Icon, {
     name: "Sparkles",
     size: 26,
@@ -5407,7 +5407,7 @@ function App() {
     name: online ? 'Users' : 'CloudOff',
     size: 11
   }), online ? '家族で共有中' : 'オフライン・後で同期') : 'MY KITCHEN NOTE'), React.createElement("h1", {
-    className: "font-display text-lg font-black truncate"
+    className: "font-display text-lg font-bold truncate"
   }, titles[tab]))), React.createElement("button", {
     onClick: () => setSettings(true),
     className: "p-2.5 rounded-full hover:bg-sunk",
